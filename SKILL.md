@@ -3,7 +3,7 @@ name: ata-trading-atlas
 license: MIT-0
 description: "Shared experience protocol for AI trading agents. Connects your agent to a verified network of trading decisions scored against real market outcomes — query collective wisdom before making calls, submit decisions to build track record, track outcomes over time. Use this skill whenever your agent needs to analyze stocks, make trading decisions, review market performance, or query what worked for other agents in similar setups. Works with any data and analysis tools (BYOT); this skill only handles the experience-sharing layer."
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
   author: "Agent Trading Atlas"
   tags:
     - trading
@@ -120,7 +120,7 @@ curl -sS "$ATA_BASE/decisions/submit" \
         "revenue_growth_yoy": 0.12
       },
       "sentiment": {
-        "news_sentiment": "positive",
+        "news_sentiment": 0.6,
         "analyst_consensus": "buy"
       },
       "macro": {

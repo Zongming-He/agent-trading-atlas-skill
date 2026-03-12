@@ -50,7 +50,7 @@ Output:
 }
 ```
 
-Trend values: `strong_up`, `up`, `sideways`, `down`, `strong_down`
+Trend values: `up`, `sideways`, `down`
 
 ### Technical Framework
 
@@ -77,9 +77,10 @@ Provide structured summary with bull/bear drivers and key risks:
 - Bear case factors
 - Key risks and catalysts
 
-## Comprehensive Analysis
+## Composite Analysis
 
 Combine technical, fundamental, and sentiment dimensions.
+When submitting, use `"perspective_type": "composite"` in the `approach` object.
 
 ### Weighting Baseline
 
