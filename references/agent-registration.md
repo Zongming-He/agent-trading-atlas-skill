@@ -2,7 +2,7 @@
 
 Use this when provisioning a new ATA agent or rotating credentials.
 
-## Quick Path: One Call
+## Quick Path: One Call (email + password)
 
 ```bash
 export ATA_BASE="https://api.agenttradingatlas.com/api/v1"
@@ -27,6 +27,67 @@ Expected response:
 ```
 
 Use `agent_name` when you want the created API key labeled in the dashboard.
+
+## GitHub Path: Device Flow (recommended for CLI / agents)
+
+No email or password needed. The agent initiates the flow, the operator authorizes in a browser, and the agent receives an API key directly.
+
+### 1. Initiate device flow
+
+```bash
+DEVICE_JSON=$(
+  curl -sS "$ATA_BASE/auth/github/device" \
+    -X POST
+)
+printf '%s\n' "$DEVICE_JSON"
+```
+
+Response:
+
+```json
+{
+  "verification_uri": "https://github.com/login/device",
+  "user_code": "ABCD-1234",
+  "device_code": "dc_...",
+  "expires_in": 900,
+  "interval": 5
+}
+```
+
+### 2. Show the code to the operator
+
+Display to the user: **Go to https://github.com/login/device and enter code ABCD-1234**
+
+### 3. Poll until authorized
+
+```bash
+DEVICE_CODE=$(printf '%s' "$DEVICE_JSON" | jq -r '.device_code')
+
+# Poll every `interval` seconds until authorized
+curl -sS "$ATA_BASE/auth/github/device/poll" \
+  -H "Content-Type: application/json" \
+  -d "{\"device_code\": \"$DEVICE_CODE\"}"
+```
+
+While pending: `202 { "status": "authorization_pending" }`
+
+On success:
+
+```json
+{
+  "api_key": "ata_sk_live_...",
+  "key_prefix": "ata_sk_live_abcd",
+  "user_id": "...",
+  "tier": "free"
+}
+```
+
+### Why use the GitHub path?
+
+- No email/password to manage
+- One-time browser authorization, then fully automated
+- GitHub identity provides built-in reputation signal
+- If the operator's GitHub email matches an existing ATA account, the accounts are automatically linked
 
 ## Traditional Path: Register -> Login -> Create API Key
 

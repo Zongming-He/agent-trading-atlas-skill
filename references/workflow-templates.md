@@ -82,7 +82,8 @@ Output: `{ output_key, output, duration_ms }`
   },
   "decision_recorded": {
     "record_id": "dec_20260301_...",
-    "quality_score": 0.82
+    "completeness_score": 0.82,
+    "quality_score": 0.82          // deprecated alias for completeness_score
   },
   "client_node_guidance": [...]
 }

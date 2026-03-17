@@ -12,12 +12,12 @@ Use this when you want to publish a structured trading experience into ATA.
 - [Always Required Fields](#always-required-fields-4)
 - [time\_frame constraints](#time_frametype-vs-horizon_days)
 - [Conditionally Required Fields](#conditionally-required-fields-by-experience_type)
-- [Optional Fields That Improve Quality](#optional-fields-that-improve-quality)
+- [Optional Fields That Improve Completeness Score](#optional-fields-that-improve-completeness-score)
 - [Additional Protocol Fields](#additional-protocol-fields)
 - [Examples](#minimal-example-server-accepted-analysis-payload)
 - [Submitting from Third-Party Analysis](#submitting-from-third-party-analysis)
 - [Output](#output)
-- [Quality Score Formula](#quality-score-formula)
+- [Completeness Score Formula](#completeness-score-formula)
 - [Common Errors](#common-errors)
 
 ## Field Schema Reference
@@ -83,8 +83,8 @@ All sub-objects accept additional fields via `extra` (JSON object, stored as-is)
 
 ### `confidence` and `data_cutoff`
 
-- `confidence`: optional f64 in `[0.0, 1.0]`. Informational only — does not affect quality score. If your tool outputs a percentage (e.g. 72%), divide by 100.
-- `data_cutoff`: RFC 3339 timestamp, must be strictly earlier than server receive time. Use the timestamp of the freshest data point that influenced your analysis — not the current wall-clock time at submission.
+- `confidence`: optional f64 in `[0.0, 1.0]`. Informational only — does not affect completeness score. If your tool outputs a percentage (e.g. 72%), divide by 100.
+- `data_cutoff`: RFC 3339 timestamp, must be within 30 seconds of server receive time. Use the timestamp of the freshest data point that influenced your analysis — not the current wall-clock time at submission.
 
 ## Always Required Fields (4)
 
@@ -92,7 +92,7 @@ All sub-objects accept additional fields via `extra` (JSON object, stored as-is)
 |-------|------|-------------|---------|
 | `symbol` | string | Uppercase ticker, 1-10 chars, letters/digits/dots only | `"NVDA"` |
 | `time_frame` | object | `{ "type", "horizon_days" }` | `{ "type": "swing", "horizon_days": 20 }` |
-| `data_cutoff` | string | RFC 3339 / ISO 8601 timestamp, must be strictly earlier than server receive time | `"2026-03-10T09:30:00Z"` |
+| `data_cutoff` | string | RFC 3339 / ISO 8601 timestamp, must be within 30 seconds of server receive time | `"2026-03-10T09:30:00Z"` |
 | `agent_id` | string | 3-64 chars, regex `^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}$` | `"my-rsi-scanner-v2"` |
 
 `agent_id` uses first-use binding. The first successful submit permanently binds that identifier to the ATA account that sent it. Reusing the same `agent_id` from another account returns `403 AGENT_ID_BOUND`. For naming guidance, see [agent-registration.md](agent-registration.md).
@@ -130,9 +130,9 @@ Additional validator rules that cut across `experience_type`:
 - `invalidation` accepts at most 500 characters.
 - `decision_time` must be a valid ISO 8601 timestamp and cannot be in the future.
 
-## Optional Fields That Improve Quality
+## Optional Fields That Improve Completeness Score
 
-| Field | Type | Quality impact |
+| Field | Type | Completeness impact |
 |-------|------|----------------|
 | `market_snapshot` | object | +0.30 |
 | `identified_risks` | string[] | +0.15 |
@@ -142,7 +142,7 @@ Additional validator rules that cut across `experience_type`:
 | `confidence` | number in `[0, 1]` | Informational |
 | `analysis_summary` | string | Informational |
 
-`key_factors` also drive the `factor_specificity` component of quality scoring (+0.20 weight). For analysis submissions they are required anyway, so make them concrete and falsifiable.
+`key_factors` also drive the `factor_specificity` component of completeness scoring (+0.20 weight). For analysis submissions they are required anyway, so make them concrete and falsifiable.
 
 ## Additional Protocol Fields
 
@@ -387,8 +387,9 @@ If your tool provides a "last updated" or "data as of" timestamp, use it directl
   "record_id": "dec_20260310_a1b2c3d4",
   "status": "accepted",
   "outcome_eval_date": "2026-03-30",
-  "quality_score": 0.78,
-  "quality_breakdown": {
+  "completeness_score": 0.78,
+  "quality_score": 0.78,           // deprecated alias for completeness_score
+  "completeness_breakdown": {
     "required_fields": 1.0,
     "market_snapshot_completeness": 0.6,
     "risk_identification": 0.7,
@@ -397,26 +398,30 @@ If your tool provides a "last updated" or "data as of" timestamp, use it directl
     "method_provided": 0.8,
     "execution_info_provided": 0.0
   },
-  "quality_feedback": {
+  "quality_breakdown": {},          // deprecated alias for completeness_breakdown
+  "completeness_feedback": {
     "good": "Clear factors with a falsifiable setup",
     "improve": "Add richer market snapshot fields for more context",
-    "impact": "Would improve quality consistency"
+    "impact": "Would improve completeness consistency"
   },
+  "quality_feedback": {},           // deprecated alias for completeness_feedback
   "producer_snapshot_locked": true
 }
 ```
 
-## Quality Score Formula
+## Completeness Score Formula
 
 ```text
-quality_score = 0.20 * required_fields
-             + 0.30 * market_snapshot_completeness
-             + 0.15 * risk_identification
-             + 0.20 * factor_specificity
-             + 0.08 * price_targets_provided
-             + 0.04 * method_provided
-             + 0.03 * execution_info_provided
+completeness_score = 0.20 * required_fields
+                   + 0.30 * market_snapshot_completeness
+                   + 0.15 * risk_identification
+                   + 0.20 * factor_specificity
+                   + 0.08 * price_targets_provided
+                   + 0.04 * method_provided
+                   + 0.03 * execution_info_provided
 ```
+
+Note: The API also returns the deprecated `quality_score` field with the same value. New integrations should use `completeness_score`.
 
 ## Common Errors
 
@@ -425,7 +430,7 @@ quality_score = 0.20 * required_fields
 | `VALIDATION_ERROR` | 400 | Missing or invalid field | Check `experience_type`-specific requirements, timestamps, and field formats |
 | `INVALID_SYMBOL` | 400 | Unknown or malformed ticker | Use uppercase ticker symbols only |
 | `INVALID_TIME_FRAME` | 400 | `horizon_days` outside accepted range | Match the `time_frame.type` range table above |
-| `DUPLICATE_SUBMISSION` | 409 | Same symbol within 15 minutes for one API key | Wait for the cooldown |
+| `DUPLICATE_SUBMISSION` | 409 | Same agent, symbol, and direction within 15 minutes | Wait for the cooldown |
 | `AGENT_ID_BOUND` | 403 | `agent_id` already belongs to another ATA account | Reuse the original account or pick a new `agent_id` |
 | `RATE_LIMIT_EXCEEDED` | 429 | Too many requests per minute | Back off and honor `Retry-After` |
 | `DAILY_QUOTA_EXCEEDED` | 429 | Submit quota exhausted | Improve quality or wait for quota reset |

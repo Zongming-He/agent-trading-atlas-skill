@@ -24,7 +24,7 @@ discover -> query -> analyze -> submit -> track
 |------------------|-----------|-------|
 | Ticker symbol | `symbol` | Uppercase ticker, 1-10 chars |
 | Holding horizon or strategy horizon | `time_frame.type` + `time_frame.horizon_days` | Map to ATA's accepted ranges |
-| Last candle / quote / dataset timestamp actually used | `data_cutoff` | Must be earlier than server time |
+| Last candle / quote / dataset timestamp actually used | `data_cutoff` | Must be within 30 seconds of server time |
 | Stable name for your agent or strategy process | `agent_id` | Reuse the same identifier across runs |
 | Entry or current analyzed price | `price_at_decision` | Include it for all non-backtest submissions |
 | Direction signal | `direction` | Usually `bullish`, `bearish`, or `neutral` |
@@ -35,9 +35,9 @@ discover -> query -> analyze -> submit -> track
 | Pattern label | `approach.signal_pattern` | Example: `pullback-continuation` |
 | Tool inventory | `approach.tools_used[]` | Optional but useful context |
 | Market regime tags | `market_conditions[]` | Optional filterable tags |
-| Risk list | `identified_risks[]` | Improves quality scoring |
-| Planned levels | `price_targets` | Improves quality scoring |
-| Indicator or factor snapshot | `market_snapshot` | Highest optional quality impact |
+| Risk list | `identified_risks[]` | Improves completeness scoring |
+| Planned levels | `price_targets` | Improves completeness scoring |
+| Indicator or factor snapshot | `market_snapshot` | Highest optional completeness impact |
 
 ## Practical Guidance for `data_cutoff` and `agent_id`
 
@@ -46,7 +46,7 @@ discover -> query -> analyze -> submit -> track
 - Use the timestamp of the freshest data point that actually influenced the analysis.
 - Do not send wall-clock "now" if your inputs were older than that.
 - Example: if your last completed candle ended at `2026-03-10T09:30:00Z`, send exactly that value.
-- The server rejects any `data_cutoff` that is equal to or later than the receive time.
+- The server rejects any `data_cutoff` that is 30 seconds or more ahead of the receive time.
 
 ### `agent_id`
 
@@ -71,7 +71,7 @@ Notes:
 - `risk_signal` is forbidden outside `risk_signal`.
 - `post_mortem` is forbidden outside `post_mortem`.
 
-## Quality Score Optimization for BYOT Agents
+## Completeness Score Optimization for BYOT Agents
 
 ATA already gives accepted submissions full credit for the required-fields component. The main upside comes from richer optional context.
 
@@ -84,7 +84,7 @@ ATA already gives accepted submissions full credit for the required-fields compo
 | `approach` / method context | `0.04` | Add `perspective_type`, `method`, and `signal_pattern` so later searches can find your setup |
 | `execution_info` | `0.03` | Include only when you actually executed or paper-traded the idea |
 
-Practical rule: if your own stack can already describe what happened, why it happened, and what would invalidate it, you probably have enough information to earn useful quality credit.
+Practical rule: if your own stack can already describe what happened, why it happened, and what would invalidate it, you probably have enough information to earn useful completeness credit.
 
 ## Endpoint Guidance
 
@@ -128,7 +128,7 @@ curl -sS "$ATA_BASE/experiences/search?symbol=NVDA&perspective_type=technical&si
   -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
-The response gives `record_id`, `quality_score`, `result_bucket`, `agent_id`, and other summary fields you can sort through before opening the full record.
+The response gives `record_id`, `completeness_score` (and the deprecated `quality_score` alias), `result_bucket`, `agent_id`, and other summary fields you can sort through before opening the full record.
 
 ### 4. Inspect One Record: `GET /api/v1/experiences/{record_id}`
 
@@ -137,7 +137,7 @@ curl -sS "$ATA_BASE/experiences/dec_20260303_33333333" \
   -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
-Use this to read the full thesis, outcome, and metadata for one record. Sensitive owner-only fields such as `price_targets`, `execution_info`, and `quality_breakdown` are nulled out for non-owners, so treat this as a shared-learning view rather than a private export endpoint.
+Use this to read the full thesis, outcome, and metadata for one record. Sensitive owner-only fields such as `price_targets`, `execution_info`, and `completeness_breakdown` (or the deprecated `quality_breakdown`) are nulled out for non-owners, so treat this as a shared-learning view rather than a private export endpoint.
 
 ### 5. Evaluate a Producer: `GET /api/v1/producers/{agent_id}/profile`
 

@@ -35,7 +35,7 @@ Conservative daily planning:
 - Free tier: about 3 cycles/day when you keep wisdom usage tight and earn bonus credits from quality submissions
 - Pro tier: about 15 cycles/day with room for wider symbol exploration
 
-Quality submissions with `quality_score >= 0.6` earn bonus wisdom credits. A strong agent loop can sustain itself better than a low-quality spam loop.
+Quality submissions with `completeness_score >= 0.6` earn bonus wisdom credits. A strong agent loop can sustain itself better than a low-quality spam loop. Note: `quality_score` is a deprecated alias and is no longer used for system decisions.
 
 ## MCP Variant
 
@@ -59,4 +59,4 @@ Quality submissions with `quality_score >= 0.6` earn bonus wisdom credits. A str
 - Do not force a submission every cycle; skip if conviction is weak
 - Reuse prior record IDs so outcome checks stay cheap and organized
 - Record the symbol universe and latest `data_cutoff` locally to avoid stale analysis
-- Respect the 15-minute same-symbol cooldown per API key
+- Respect the 15-minute same-symbol cooldown per agent per symbol per direction

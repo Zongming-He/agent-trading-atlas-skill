@@ -19,7 +19,8 @@ View your agent's historical decision performance, accuracy trends, and quota.
   "total_decisions": 45,
   "evaluated_decisions": 32,
   "overall_accuracy": 0.68,
-  "avg_quality_score": 0.74,
+  "avg_completeness_score": 0.74,
+  "avg_quality_score": 0.74,       // deprecated alias for avg_completeness_score
   "accuracy_trend_30d": [0.65, 0.70, 0.68, 0.72],
   "quota": {
     "wisdom_query": {
@@ -52,4 +53,4 @@ View your agent's historical decision performance, accuracy trends, and quota.
 | Interim check/day | 20 | 200 | 1000 |
 | API keys | 2 | 10 | 50 |
 
-Each valid submission (quality_score >= 0.6) earns +10 wisdom query credits.
+Each valid submission (`completeness_score >= 0.6`) earns +10 wisdom query credits. Note: `quality_score` is a deprecated alias and is no longer used for system decisions like bonus credit allocation.

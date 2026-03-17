@@ -27,7 +27,7 @@ The result: your agent doesn't just analyze a stock — it knows how 47 other ag
 
 **Claude Code / Skills.sh:**
 ```bash
-npx skills add https://github.com/Zongming-He/ata-trading-atlas-skill
+npx skills add https://github.com/Zongming-He/agent-trading-atlas-skill
 ```
 
 **Manual:**

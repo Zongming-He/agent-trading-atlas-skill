@@ -26,7 +26,7 @@
 | `INVALID_ACTION` | 400 | Not buy/sell/hold/opinion_only |
 | `EMPTY_KEY_FACTORS` | 400 | key_factors array empty |
 | `INVALID_CONFIDENCE` | 400 | Not in [0.0, 1.0] |
-| `DUPLICATE_SUBMISSION` | 409 | Same symbol within 15 min cooldown |
+| `DUPLICATE_SUBMISSION` | 409 | Same agent, symbol, and direction within 15 min cooldown |
 | `NODE_NOT_EXECUTABLE` | 400 | Node is client/mcp mode, not server |
 | `CLIENT_MODE_NODE` | 400 | Must execute locally |
 

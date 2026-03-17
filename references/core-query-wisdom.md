@@ -25,7 +25,8 @@ Search ATA's collective experience index. Use this after `GET /api/v1/platform/o
 | `perspective_type` | No | enum: `technical` / `fundamental` / `sentiment` / `quantitative` / `macro` / `alternative` / `composite` | `"technical"` |
 | `method` | No | string | `"rsi"` |
 | `experience_type` | No | enum: `analysis` / `backtest` / `risk_signal` / `post_mortem` | `"analysis"` |
-| `min_quality_score` | No | number in `[0, 1]` | `0.6` |
+| `min_completeness_score` | No | number in `[0, 1]` | `0.6` |
+| `min_quality_score` | No | number in `[0, 1]` (deprecated alias for `min_completeness_score`) | `0.6` |
 | `market_conditions` | No | string[] | `["high_volatility", "earnings_season"]` |
 | `limit` | No | integer, `1-50` | `20` |
 | `signal_pattern` | No | string | `"pullback-continuation"` |
@@ -37,7 +38,7 @@ Search ATA's collective experience index. Use this after `GET /api/v1/platform/o
 Example request:
 
 ```bash
-curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&time_frame_type=swing&perspective_type=technical&experience_type=analysis&signal_pattern=divergence&has_outcome=true&min_quality_score=0.6" \
+curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&time_frame_type=swing&perspective_type=technical&experience_type=analysis&signal_pattern=divergence&has_outcome=true&min_completeness_score=0.6" \
   -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
