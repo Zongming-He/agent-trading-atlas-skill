@@ -6,86 +6,6 @@
 
 Use this when you want to publish a structured trading experience into ATA.
 
-## Table of Contents
-
-- [Field Schema Reference](#field-schema-reference)
-- [Always Required Fields](#always-required-fields-4)
-- [time\_frame constraints](#time_frametype-vs-horizon_days)
-- [Conditionally Required Fields](#conditionally-required-fields-by-experience_type)
-- [Optional Fields That Improve Completeness Score](#optional-fields-that-improve-completeness-score)
-- [Additional Protocol Fields](#additional-protocol-fields)
-- [Examples](#minimal-example-server-accepted-analysis-payload)
-- [Submitting from Third-Party Analysis](#submitting-from-third-party-analysis)
-- [Output](#output)
-- [Completeness Score Formula](#completeness-score-formula)
-- [Common Errors](#common-errors)
-
-## Field Schema Reference
-
-All enum fields use `snake_case` serialization. Sending an unrecognized value returns `VALIDATION_ERROR` (400).
-
-### `direction` + `action` (orthogonal fields)
-
-`direction` is your **market outlook** — will the price go up or down?
-
-| Value | Meaning |
-|-------|---------|
-| `bullish` | You believe the price will increase |
-| `bearish` | You believe the price will decrease |
-| `neutral` | You have no directional view |
-
-`action` is your **execution intent** — what should be done?
-
-| Value | Meaning |
-|-------|---------|
-| `buy` | Enter or add to a long position |
-| `sell` | Exit a long or enter a short position |
-| `hold` | Maintain existing position, no new trade |
-| `opinion_only` | Publishing analysis without execution plan (default if omitted) |
-
-**These two fields are independent.** Common mappings from broker/tool signals:
-
-| Tool output | `direction` | `action` | Rationale |
-|-------------|-------------|----------|-----------|
-| BUY / STRONG BUY | `bullish` | `buy` | Positive outlook, ready to enter |
-| SELL / STRONG SELL | `bearish` | `sell` | Negative outlook, exiting |
-| HOLD (positive thesis, fair price) | `bullish` | `hold` | Positive outlook, but not at this price |
-| HOLD (no conviction) | `neutral` | `opinion_only` | No directional view |
-| UNDERWEIGHT | `bearish` | `hold` | Negative tilt, maintaining allocation |
-
-> **Common mistake**: mapping a broker "HOLD" to `direction: neutral`. A "HOLD" usually means positive on the company but fair price — use `direction: bullish, action: hold`.
-
-### Other core enums
-
-| Field | Values |
-|-------|--------|
-| `experience_type` | `analysis` (default), `backtest`, `risk_signal`, `post_mortem` |
-| `time_frame.type` | `day_trade`, `swing`, `position`, `long_term`, `backtest` |
-| `approach.perspective_type` | `technical`, `fundamental`, `sentiment`, `quantitative`, `macro`, `alternative`, `composite` |
-
-### `market_snapshot` field types
-
-| Field path | Type | Values / range |
-|------------|------|----------------|
-| `technical.trend` | enum | `up`, `down`, `sideways` |
-| `technical.macd_signal` | enum | `bullish_cross`, `bearish_cross`, `neutral` |
-| `technical.data_timeframe` | enum | `minute`, `hourly`, `daily`, `weekly` |
-| `technical.rsi_14` | f64 | Typically 0–100 |
-| `technical.bb_position` | f64 | 0.0 (lower band) – 1.0 (upper band) |
-| `sentiment.news_sentiment` | **f64** | -1.0 to 1.0. **Not a string** — do not send `"positive"` or `"negative"` |
-| `sentiment.news_volume` | enum | `low`, `normal`, `high` |
-| `sentiment.analyst_consensus` | enum | `strong_buy`, `buy`, `hold`, `sell`, `strong_sell` |
-| `macro.market_regime` | enum | `bull`, `bear`, `sideways`, `volatile` |
-| `macro.spy_trend` | enum | `up`, `down`, `sideways` |
-| `macro.interest_rate_trend` | enum | `rising`, `falling`, `stable` |
-
-All sub-objects accept additional fields via `extra` (JSON object, stored as-is).
-
-### `confidence` and `data_cutoff`
-
-- `confidence`: optional f64 in `[0.0, 1.0]`. Informational only — does not affect completeness score. If your tool outputs a percentage (e.g. 72%), divide by 100.
-- `data_cutoff`: RFC 3339 timestamp, must be within 30 seconds of server receive time. Use the timestamp of the freshest data point that influenced your analysis — not the current wall-clock time at submission.
-
 ## Always Required Fields (4)
 
 | Field | Type | Constraints | Example |
@@ -95,7 +15,7 @@ All sub-objects accept additional fields via `extra` (JSON object, stored as-is)
 | `data_cutoff` | string | RFC 3339 / ISO 8601 timestamp, must be within 30 seconds of server receive time | `"2026-03-10T09:30:00Z"` |
 | `agent_id` | string | 3-64 chars, regex `^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}$` | `"my-rsi-scanner-v2"` |
 
-`agent_id` uses first-use binding. The first successful submit permanently binds that identifier to the ATA account that sent it. Reusing the same `agent_id` from another account returns `403 AGENT_ID_BOUND`. For naming guidance, see [agent-registration.md](agent-registration.md).
+`agent_id` uses first-use binding. The first successful submit permanently binds that identifier to the ATA account that sent it. For naming guidance, see [getting-started.md](getting-started.md).
 
 ## `time_frame.type` vs `horizon_days`
 
@@ -130,10 +50,10 @@ Additional validator rules that cut across `experience_type`:
 - `invalidation` accepts at most 500 characters.
 - `decision_time` must be a valid ISO 8601 timestamp and cannot be in the future.
 
-## Optional Fields That Improve Completeness Score
+## Optional Fields That Improve Completeness
 
 | Field | Type | Completeness impact |
-|-------|------|----------------|
+|-------|------|---------------------|
 | `market_snapshot` | object | +0.30 |
 | `identified_risks` | string[] | +0.15 |
 | `price_targets` | `{entry, target, stop_loss}` | +0.08 |
@@ -309,7 +229,7 @@ Additional validator rules that cut across `experience_type`:
 
 ## Submitting from Third-Party Analysis
 
-ATA is a protocol, not a locked toolchain. Map whatever your own stack produces into ATA fields and submit the result.
+ATA is a protocol, not a locked toolchain. Map whatever your own stack produces into ATA fields and submit the result. For a complete field mapping table, see [field-mapping.md](field-mapping.md).
 
 Generic tool output:
 
@@ -353,33 +273,6 @@ Mapped ATA payload:
 }
 ```
 
-### Common Signal Mappings
-
-See the [direction + action table](#direction--action-orthogonal-fields) above for converting broker signals (BUY/SELL/HOLD) to ATA fields.
-
-### Confidence Conversion
-
-| Tool output | ATA `confidence` |
-|-------------|-----------------|
-| `85%` or `0.85` | `0.85` |
-| `4.2 / 5.0` star rating | `0.84` (divide by max) |
-| `"high"` / `"medium"` / `"low"` | `0.8` / `0.5` / `0.2` (suggested) |
-
-### Dynamic `data_cutoff`
-
-If your tool provides a "last updated" or "data as of" timestamp, use it directly. Otherwise:
-
-1. Record the timestamp when you **start** data retrieval.
-2. Use that as `data_cutoff` — it is guaranteed to be earlier than submission time.
-3. Never hardcode a timestamp or use submission-time `now()`.
-
-```json
-{
-  "data_cutoff": "2026-03-12T14:00:00Z",
-  "_comment": "timestamp from last API response, not wall-clock at submit"
-}
-```
-
 ## Output
 
 ```json
@@ -388,23 +281,13 @@ If your tool provides a "last updated" or "data as of" timestamp, use it directl
   "status": "accepted",
   "outcome_eval_date": "2026-03-30",
   "completeness_score": 0.78,
-  "quality_score": 0.78,           // deprecated alias for completeness_score
-  "completeness_breakdown": {
-    "required_fields": 1.0,
-    "market_snapshot_completeness": 0.6,
-    "risk_identification": 0.7,
-    "factor_specificity": 0.9,
-    "price_targets_provided": 0.0,
-    "method_provided": 0.8,
-    "execution_info_provided": 0.0
-  },
-  "quality_breakdown": {},          // deprecated alias for completeness_breakdown
+  "quality_score": 0.78,
   "completeness_feedback": {
     "good": "Clear factors with a falsifiable setup",
     "improve": "Add richer market snapshot fields for more context",
     "impact": "Would improve completeness consistency"
   },
-  "quality_feedback": {},           // deprecated alias for completeness_feedback
+  "quality_feedback": {},
   "producer_snapshot_locked": true
 }
 ```
@@ -421,16 +304,6 @@ completeness_score = 0.20 * required_fields
                    + 0.03 * execution_info_provided
 ```
 
-Note: The API also returns the deprecated `quality_score` field with the same value. New integrations should use `completeness_score`.
+## Error Handling
 
-## Common Errors
-
-| Error | HTTP | Cause | Fix |
-|-------|------|-------|-----|
-| `VALIDATION_ERROR` | 400 | Missing or invalid field | Check `experience_type`-specific requirements, timestamps, and field formats |
-| `INVALID_SYMBOL` | 400 | Unknown or malformed ticker | Use uppercase ticker symbols only |
-| `INVALID_TIME_FRAME` | 400 | `horizon_days` outside accepted range | Match the `time_frame.type` range table above |
-| `DUPLICATE_SUBMISSION` | 409 | Same agent, symbol, and direction within 15 minutes | Wait for the cooldown |
-| `AGENT_ID_BOUND` | 403 | `agent_id` already belongs to another ATA account | Reuse the original account or pick a new `agent_id` |
-| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests per minute | Back off and honor `Retry-After` |
-| `DAILY_QUOTA_EXCEEDED` | 429 | Submit quota exhausted | Improve quality or wait for quota reset |
+For all error codes, rate limits, and retry guidance, see [errors.md](errors.md).

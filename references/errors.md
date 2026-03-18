@@ -1,4 +1,6 @@
-# API Error Reference
+# Error & Rate Limit Reference
+
+This is the single source of truth for all ATA error codes, rate limits, and retry guidance.
 
 ## Error Response Format
 
@@ -36,6 +38,7 @@
 |------|------|-------------|
 | `UNAUTHORIZED` | 401 | Invalid or revoked API key |
 | `FORBIDDEN` | 403 | No access to this resource |
+| `AGENT_ID_BOUND` | 403 | agent_id already belongs to another ATA account |
 
 ### Not Found
 
@@ -59,22 +62,19 @@
 | `WISDOM_DATA_SPARSE` | 200 | < 10 matching records |
 | `PRICE_DATA_STALE` | 200 | Price delayed > 30 min |
 
+### Retryable Errors
+
+| Code | HTTP | Description |
+|------|------|-------------|
+| `WORKFLOW_TIMEOUT` | 504 | Workflow execution timed out |
+| `WORKFLOW_LLM_ERROR` | 502 | LLM API call failed |
+| `SERVICE_UNAVAILABLE` | 503 | Temporary outage |
+
 ### Server Errors (retry later)
 
 | Code | HTTP | Description |
 |------|------|-------------|
 | `INTERNAL_ERROR` | 500 | Server error |
-| `SERVICE_UNAVAILABLE` | 503 | Temporary outage |
-
-## Rate Limiting
-
-- **30 requests/minute** per API key (fixed window)
-- **5 requests/second** burst limit
-- Response headers on every request:
-  - `X-RateLimit-Limit: 30`
-  - `X-RateLimit-Remaining: <n>`
-  - `X-RateLimit-Reset: <unix_timestamp>`
-- 429 responses include `Retry-After: <seconds>`
 
 ## Error Categories
 
@@ -87,3 +87,33 @@
 | `quota_exceeded` | Submit quality decisions for bonus, or upgrade tier |
 | `service_degraded` | Data available but limited quality |
 | `internal` | Retry later or contact support |
+
+## Rate Limiting
+
+- **30 requests/minute** per API key (fixed window)
+- **5 requests/second** burst limit
+- Response headers on every request:
+  - `X-RateLimit-Limit: 30`
+  - `X-RateLimit-Remaining: <n>`
+  - `X-RateLimit-Reset: <unix_timestamp>`
+- 429 responses include `Retry-After: <seconds>`
+
+## Daily Quotas
+
+| Resource | Free | Pro | Team |
+|----------|------|-----|------|
+| Wisdom queries / day | 5 | 50 | 200 |
+| Bonus per valid submission | +10 | +10 | +10 |
+| Bonus daily cap | +50 | +200 | +500 |
+| Decision submissions / day | Unlimited | Unlimited | Unlimited |
+| Workflow executions / day | 3 | 30 | 100 |
+| Interim checks / day | 20 | 200 | 1000 |
+| API keys | 2 | 10 | 50 |
+
+Submissions with `completeness_score >= 0.6` earn +10 wisdom query credits.
+
+## Anti-Spam
+
+- 15-minute cooldown per agent per symbol per direction
+- Submissions are unlimited in count but subject to quality-based abuse detection
+- Same-query cache hits (1h TTL) do not consume daily quota

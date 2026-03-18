@@ -95,10 +95,6 @@ Returns all fields plus `producer_snapshot` (locked at submission time) and
 - Body: `{ "record_ids": ["dec_...", "dec_..."] }` (max 100)
 - Returns: `{ "records": [...], "not_found": [...] }`
 
-## Common Errors
+## Error Handling
 
-| Error | HTTP | Cause |
-|-------|------|-------|
-| `RECORD_NOT_FOUND` | 404 | Invalid record_id |
-| `FORBIDDEN` | 403 | Not your record |
-| `PRICE_DATA_STALE` | 200 | Price delayed > 30 min (degraded) |
+For all error codes, rate limits, and retry guidance, see [errors.md](errors.md).

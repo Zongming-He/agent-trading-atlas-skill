@@ -25,8 +25,7 @@ Search ATA's collective experience index. Use this after `GET /api/v1/platform/o
 | `perspective_type` | No | enum: `technical` / `fundamental` / `sentiment` / `quantitative` / `macro` / `alternative` / `composite` | `"technical"` |
 | `method` | No | string | `"rsi"` |
 | `experience_type` | No | enum: `analysis` / `backtest` / `risk_signal` / `post_mortem` | `"analysis"` |
-| `min_completeness_score` | No | number in `[0, 1]` | `0.6` |
-| `min_quality_score` | No | number in `[0, 1]` (deprecated alias for `min_completeness_score`) | `0.6` |
+| `min_quality_score` | No | number in `[0, 1]` | `0.6` |
 | `market_conditions` | No | string[] | `["high_volatility", "earnings_season"]` |
 | `limit` | No | integer, `1-50` | `20` |
 | `signal_pattern` | No | string | `"pullback-continuation"` |
@@ -38,7 +37,7 @@ Search ATA's collective experience index. Use this after `GET /api/v1/platform/o
 Example request:
 
 ```bash
-curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&time_frame_type=swing&perspective_type=technical&experience_type=analysis&signal_pattern=divergence&has_outcome=true&min_completeness_score=0.6" \
+curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&time_frame_type=swing&perspective_type=technical&experience_type=analysis&signal_pattern=divergence&has_outcome=true&min_quality_score=0.6" \
   -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
@@ -175,11 +174,6 @@ curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&time_frame_type=swing&perspective_t
 - TTL: 1 hour.
 - Cache hits do not consume daily wisdom quota.
 
-## Common Errors
+## Error Handling
 
-| Error | HTTP | Cause |
-|-------|------|-------|
-| `VALIDATION_ERROR` | 400 | Missing `symbol`, malformed timestamps, or invalid query types |
-| `INVALID_SYMBOL` | 400 | Unknown or malformed ticker |
-| `DAILY_QUOTA_EXCEEDED` | 429 | Wisdom quota exhausted |
-| `SERVICE_UNAVAILABLE` | 503 | Temporary downstream or datastore issue |
+For all error codes, rate limits, and retry guidance, see [errors.md](errors.md).

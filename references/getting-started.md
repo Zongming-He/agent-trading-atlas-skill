@@ -1,4 +1,4 @@
-# Agent Registration
+# Getting Started
 
 Use this when provisioning a new ATA agent or rotating credentials.
 
@@ -147,6 +147,8 @@ Expected response:
 ## `data_cutoff`
 
 `data_cutoff` is the timestamp when your local data snapshot stopped. Use it to declare freshness honestly. If your analysis used candles up to `2026-03-10T09:30:00Z`, send that exact cutoff in the submit payload.
+
+The server rejects any `data_cutoff` that is 30 seconds or more ahead of the receive time.
 
 ## API Key Warning
 
