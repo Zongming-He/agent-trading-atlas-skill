@@ -1,222 +1,172 @@
 # Workflow & Templates Guide
 
-Use this when you want ATA to guide your analysis through a structured workflow template, or when you need to execute individual workflow nodes.
+Use this when you want a reusable ATA workflow package, not when you want ATA to run analysis for you.
 
-## Templates
+## Workflow Boundary
 
-### Quick Scan (~10 seconds)
+ATA workflow is a **method-design and packaging layer**:
 
-Technical-first, minimal path.
+- Owners design a workflow graph
+- ATA compiles it into an immutable build
+- Owners publish that build as a release
+- Agents install or read the resulting skill package locally
 
-```json
-{ "symbol": "NVDA", "template": "quick-scan" }
-```
+Workflow is **not**:
 
-Steps:
-1. Fetch latest quote + 3-month history
-2. Compute technical indicators
-3. Determine direction
-4. Return analysis summary with minimal required fields ready for submission
+- a session runtime
+- a node execution API
+- a server-side data-fetch engine
 
-### Full Analysis (~45 seconds)
+Your agent still does the actual work locally. ATA only packages the method.
 
-Multi-dimensional, comprehensive path.
+## Core Objects
 
-```json
-{ "symbol": "NVDA", "template": "full-analysis" }
-```
+### 1. Starter Templates
 
-Steps:
-1. Multi-source market data + fundamentals (server)
-2. Compute technical indicators (server)
-3. Query collective wisdom (server, parallel with step 2)
-4. Atomic analysis — technical, fundamental, sentiment views (client)
-5. Synthesize views across dimensions (client)
-6. Decision formation (client)
-7. Submit decision (server)
-8. Generate report (client, optional)
+API: `GET /api/v1/workflow/templates`
 
-## Session Lifecycle
+These are starter graphs such as `quick-scan` and `full-analysis`. They are useful when an owner wants to author or fork a reusable method, not when an API-key agent wants a remote execution plan.
 
-### 1. Create a Session
+### 2. Node Templates
+
+APIs:
+
+- `GET /api/v1/nodes`
+- `GET /api/v1/nodes/{id}`
+
+These return workflow node templates for discovery and authoring. They describe:
+
+- business category
+- authoring group
+- delivery kind
+- input/output schemas
+- optional ATA API invocation metadata
+- generated asset summaries
+
+They do **not** imply that ATA can execute the node remotely.
+
+### 3. Workflow Build
+
+Owner-session APIs:
+
+- `POST /api/v1/workflows/{id}/build`
+- `GET /api/v1/workflow-builds/{id}`
+- `GET /api/v1/workflow-builds/{id}/package`
+
+A build is an immutable snapshot of:
+
+- graph structure
+- node contracts
+- prompt/guidance snapshot
+- package summary
+
+### 4. Workflow Release
+
+Readable with API key or owner session:
+
+- `GET /api/v1/workflow-releases/{id}`
+- `GET /api/v1/workflow-releases/{id}/package`
+
+A release is the published, build-addressed object used for marketplace preview and installation.
+
+## What a Package Contains
+
+`GET /api/v1/workflow-releases/{id}/package` returns a full `SkillPackage`, including:
+
+- `SKILL.md`
+- `manifest.json`
+- `workflow.json`
+- `contracts.json`
+- generated `scripts/*`
+- generated `refs/*`
+
+The package is the thing an agent actually follows.
+
+Assume `ATA_AUTH_HEADER` is already exported as shown in [getting-started.md](getting-started.md).
+
+## How an Agent Uses a Workflow Package
+
+1. Obtain a release ID from the owner, dashboard, or marketplace flow.
+2. Fetch the package:
 
 ```bash
-curl -sS "$ATA_BASE/sessions/create" \
-  -H "Authorization: Bearer $ATA_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{ "symbol": "NVDA", "template": "full-analysis" }'
+curl -sS "$ATA_BASE/workflow-releases/$RELEASE_ID/package" \
+  -H "$ATA_AUTH_HEADER"
 ```
 
-Returns: `session_id`, `build_id`, workflow snapshot with all node contracts and guidance.
+3. Read `SKILL.md` and any generated `scripts/*` or `refs/*`.
+4. Run local steps locally:
+   - market data fetch
+   - indicator calculation
+   - technical/fundamental/sentiment analysis
+5. Call ATA API steps only where the package tells you to:
+   - `GET /api/v1/wisdom/query`
+   - `POST /api/v1/decisions/submit`
+   - `GET /api/v1/decisions/{record_id}/check`
 
-### 2. Execute Nodes
+There is no package step that requires `POST /api/v1/nodes/{id}/execute` or workflow session reporting.
 
-**Server nodes** (data-fetch, indicators, wisdom-query, decision-submit):
-- Executed by ATA backend via `POST /api/v1/nodes/{id}/execute`
-- Input: JSON matching the node's input schema
-- Output: `{ output_key, output, duration_ms }`
+## Built-in Starter Methods
 
-**Client nodes** (analysis views, synthesize, decision-form, report):
-- Executed locally by your agent
-- The workflow provides structured guidance for each client node (see below)
-- After completing a client node, report via `POST /api/v1/sessions/{id}/report-step`
+### Quick Scan
 
-### 3. Report Step Completion
+Typical package shape:
 
-```json
-{
-  "node_id": "synthesize-views",
-  "execution_mode": "client",
-  "status": "completed",
-  "duration_ms": 2500,
-  "complete_session": false
-}
-```
+1. Fetch local quote/history
+2. Compute local technical indicators
+3. Form a lightweight thesis
+4. Optionally query ATA wisdom
+5. Submit decision
 
-Returns updated session state with progress tracking.
+### Full Analysis
 
-### 4. Complete the Session
+Typical package shape:
 
-Set `"complete_session": true` on the final report-step call.
+1. Fetch local market data + fundamentals
+2. Compute indicators locally
+3. Run technical / fundamental / sentiment views locally
+4. Optionally query ATA wisdom as a challenge/reference pass
+5. Synthesize views locally
+6. Form the decision locally
+7. Submit to ATA
+8. Optionally generate a local report
 
-## Client Node Guidance
+These are **method guides**, not hosted runtimes.
 
-Each client node comes with a `GuidanceTemplate` containing:
+## Owner-Only vs Agent-Readable Surfaces
 
-| Field | Purpose |
-|-------|---------|
-| `summary` | One-sentence description of what this node does |
-| `decision_points` | Key decisions your agent must make at this step |
-| `input_context` | Business-level description of incoming data |
-| `output_description` | What this node should produce (schema in the contract) |
-| `notes` | Edge cases and caveats |
+### Owner-session only
 
-Example guidance for `synthesize-views`:
-- **summary**: Synthesize multi-dimensional signals into direction and confidence
-- **decision_points**: How to weigh conflicting signals (technical bullish but sentiment bearish); how confidence reflects signal consistency
-- **input_context**: Accepts 1-3 analysis signals (technical/fundamental/sentiment, all optional) and optional wisdom
-- **output_description**: Produces `analysis_result` with per-dimension sub-structures + overall direction + confidence + key_factors + risks
+- `POST /api/v1/workflows/{id}/build`
+- `GET /api/v1/workflow-builds/{id}`
+- `GET /api/v1/workflow-builds/{id}/package`
+- `POST /api/v1/workflows/{id}/publish`
+- `GET /api/v1/workflows/{id}/skill`
 
-Follow the guidance and produce output matching the node's output schema.
+### Agent-readable
 
-## Node Execution Modes
+- `GET /api/v1/workflow/templates`
+- `GET /api/v1/nodes`
+- `GET /api/v1/nodes/{id}`
+- `GET /api/v1/workflow-releases/{id}`
+- `GET /api/v1/workflow-releases/{id}/package`
 
-| Mode | Meaning | How to execute |
-|------|---------|----------------|
-| `server` | Executed by ATA backend | `POST /api/v1/nodes/{id}/execute` |
-| `client` | Agent executes locally using guidance | Follow guidance, report via `report-step` |
-| `mcp` | Agent calls a specific MCP tool | Call the named MCP tool |
+## Delivery Kinds
 
-## Custom Workflow
+Workflow nodes are rendered into packages using delivery kinds:
 
-For advanced use, build your own node sequence:
+| Delivery kind | Meaning |
+|---------------|---------|
+| `instruction` | Human/agent-readable local guidance |
+| `ata_api` | A structured ATA API call step |
+| `generated_asset` | A generated local script or helper file |
+| `reference` | Notes or checkpoints, not part of the main execution path |
 
-1. `GET /api/v1/nodes` — Discover available nodes
-   - Filter by `category`: data / analysis / decision / memory / submission / utility
-   - Filter by `execution_mode`: server / client / mcp
-2. `GET /api/v1/nodes/{id}` — Get contract definition (input/output schema, guidance)
-3. `POST /api/v1/nodes/{id}/execute` — Run a server-side node
+This replaces the older `execution_mode = server/client/mcp` model.
 
-## MCP Tool: `run_analysis_workflow`
+## Important Rules
 
-Shortcut for template execution via MCP:
-
-```json
-{ "symbol": "NVDA", "template": "quick-scan" }
-```
-
-Returns session results including analysis summary, decision record, and client node guidance.
-
-## Output Structure
-
-```json
-{
-  "session_id": "sess_...",
-  "result": {
-    "summary": {
-      "one_liner": "NVDA shows bullish momentum with strong earnings",
-      "direction": "bullish",
-      "confidence": 0.75,
-      "key_factors": ["..."],
-      "risks": ["..."]
-    },
-    "report_markdown": "## NVDA Analysis Report\n..."
-  },
-  "decision_recorded": {
-    "record_id": "dec_20260301_...",
-    "completeness_score": 0.82
-  },
-  "client_node_guidance": ["..."]
-}
-```
-
----
-
-## Auxiliary: Data Sources
-
-These tools are used by workflow server nodes and are also available for direct use.
-
-### Yahoo Finance (recommended, free)
-
-MCP Server: `@ata/mcp-yahoo-finance` — No API key required.
-
-| Tool | Input | Output |
-|------|-------|--------|
-| `get_stock_history` | `symbol`, `period` (1mo-5y), `interval` (1d/1wk/1mo) | `{ symbol, candles: [{ date, open, high, low, close, volume }], count }` |
-| `get_current_quote` | `symbol` | `{ price, change, change_pct, volume, market_cap, day_high, day_low }` |
-| `get_financials` | `symbol`, `statement` (income/balance/cashflow), `frequency` | Financial statement data |
-| `get_key_stats` | `symbol` | `{ pe_ratio, pb_ratio, dividend_yield, market_cap, beta, 52w_high, 52w_low, revenue }` |
-| `get_stock_news` | `symbol` | `[{ title, summary, link, published_date, source }]` |
-
-Yahoo Finance errors: `SYMBOL_NOT_FOUND`, `RATE_LIMITED` (wait 1s), `DATA_UNAVAILABLE`.
-
-### Fallback: Direct Python
-
-```python
-import yfinance as yf
-ticker = yf.Ticker("NVDA")
-hist = ticker.history(period="3mo")
-quote = ticker.info
-```
-
-### Multi-Source Priority
-
-1. Yahoo Finance (default, free)
-2. Polygon (premium, not yet implemented)
-3. Alpha Vantage (manual integration)
-
----
-
-## Auxiliary: Analysis Frameworks
-
-### Technical Analysis
-
-MCP Tools: `compute_technical_indicators` + `identify_trend` (`@ata/mcp-indicators`)
-
-**compute_technical_indicators**: Input `{ candles }` (minimum 200). Output: `{ latest: { sma_20, sma_50, sma_200, rsi_14, macd, macd_signal, macd_histogram, bb_upper, bb_mid, bb_lower, bb_position, atr, atr_pct, volume_ratio } }`
-
-**identify_trend**: Input `{ indicators }`. Output: `{ trend, strength, signals[] }`. Trend values: `strong_up`, `up`, `sideways`, `down`, `strong_down`.
-
-Framework: Trend (SMA alignment) → Momentum (RSI + MACD) → Volatility (Bollinger + ATR) → Synthesis.
-
-### Fundamental Analysis
-
-Use `get_financials` + `get_key_stats` from Yahoo Finance. Framework: Valuation (PE, PB, EV/EBITDA) → Growth (revenue YoY, earnings) → Financial health → Industry comparison.
-
-### Comprehensive Analysis Weighting
-
-| Dimension | Default | day_trade | swing | position/long_term |
-|-----------|---------|-----------|-------|--------------------|
-| Technical | 40% | 70% | 50% | 30% |
-| Fundamental | 40% | 10% | 30% | 50% |
-| Sentiment | 20% | 20% | 20% | 20% |
-
-### Risk Metrics (optional)
-
-MCP Tool: `compute_risk_metrics` (`@ata/mcp-indicators`)
-
-Input: `{ candles, benchmark_candles (optional) }`. Output: `{ volatility_30d, max_drawdown_90d, sharpe_30d, beta, var_95 }`.
-
-## Error Handling
-
-For all error codes, rate limits, and retry guidance, see [errors.md](errors.md).
+- Do not look for workflow sessions. They are not part of the current workflow product.
+- Do not look for remote node execution. Node templates are discovery metadata only.
+- Keep raw market data local unless the package explicitly tells you to submit a derived field through the core protocol.
+- Treat workflow as optional packaging. The ATA core protocol still works perfectly without it.

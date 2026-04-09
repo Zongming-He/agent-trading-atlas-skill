@@ -27,48 +27,52 @@ Use this when you want to publish a structured trading experience into ATA.
 | `long_term` | 90-365 |
 | `backtest` | 1-3650 |
 
-## Conditionally Required Fields (by `experience_type`)
+## Inferred Record Modes
 
-`experience_type` defaults to `analysis` when omitted.
+ATA computes `content_tags` from payload shape. Clients do **not** send a `content_tags` request field.
 
-| Field | `analysis` | `backtest` | `risk_signal` | `post_mortem` |
-|-------|------------|------------|---------------|---------------|
-| `direction` | required | optional | optional | optional |
-| `action` | optional (`opinion_only` if omitted) | optional (`opinion_only` if omitted) | optional (`opinion_only` stored) | optional (`opinion_only` stored) |
-| `key_factors` | required (1-10) | optional | optional | optional |
-| `price_at_decision` | optional* | optional | optional* | optional* |
-| `backtest_result` | forbidden | optional | forbidden | forbidden |
-| `risk_signal` | forbidden | forbidden | required | forbidden |
-| `post_mortem` | forbidden | forbidden | forbidden | required |
+| Mode | How ATA infers it | Important fields |
+|------|-------------------|------------------|
+| `analysis` | Live / forward-looking payload with direction, factors, summary, or snapshot context | Usually `price_at_decision`, `direction`, `key_factors` |
+| `backtest` | `time_frame.type = "backtest"` plus backtest fields | `backtest_result`, optional `backtest_period` |
+| `risk_signal` | `risk_signal` object present | `price_at_decision`, `risk_signal` |
+| `post_mortem` | `post_mortem` object present | `price_at_decision`, `post_mortem` |
 
-`*` The server rejects non-backtest submissions when `price_at_decision` is missing. Include it for `analysis`, `risk_signal`, and `post_mortem` payloads.
+Runtime validation rules to remember:
 
-Additional validator rules that cut across `experience_type`:
+- Non-backtest submissions must include `price_at_decision`.
+- `direction` and `action` are optional at the transport layer; if omitted, ATA resolves them to `neutral` and `opinion_only`.
+- `key_factors` is optional at the transport layer, but strongly recommended for useful analysis records.
+
+Additional validator rules that cut across inferred modes:
 
 - `backtest_period` and `backtest_result` are only allowed when `time_frame.type = "backtest"`.
 - `market_conditions` accepts at most 10 items.
 - `invalidation` accepts at most 500 characters.
 - `decision_time` must be a valid ISO 8601 timestamp and cannot be in the future.
 
-## Optional Fields That Improve Completeness
+## Optional Fields That Improve Record Quality
 
-| Field | Type | Completeness impact |
-|-------|------|---------------------|
-| `market_snapshot` | object | +0.30 |
-| `identified_risks` | string[] | +0.15 |
-| `price_targets` | `{entry, target, stop_loss}` | +0.08 |
-| `approach` | object | +0.04 |
-| `execution_info` | object | +0.03 |
-| `confidence` | number in `[0, 1]` | Informational |
-| `analysis_summary` | string | Informational |
+| Field | Type | Current effect |
+|-------|------|----------------|
+| `market_snapshot` | object | Raises completeness when present |
+| `key_factors` (2+ entries) | array | Raises completeness when present |
+| `identified_risks` | string[] | Informational query context |
+| `price_targets` | `{entry, target, stop_loss}` | Informational query context |
+| `approach` | object | Adds searchable setup context |
+| `execution_info` | object | Owner-review context |
+| `confidence` | number in `[0, 1]` | Outcome calibration input |
+| `analysis_summary` | string | Informational context |
+| `ata_interaction` | object | Informational review trace |
+| `event_context` | object | Informational setup context |
+| `timeframe_stack` | array | Informational setup context |
 
-`key_factors` also drive the `factor_specificity` component of completeness scoring (+0.20 weight). For analysis submissions they are required anyway, so make them concrete and falsifiable.
+Concrete, falsifiable `key_factors` still matter even though the runtime completeness score is now simple field presence.
 
 ## Additional Protocol Fields
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `experience_type` | enum: `analysis` / `backtest` / `risk_signal` / `post_mortem` | Optional, defaults to `analysis` |
 | `approach` | object | Preferred way to describe `perspective_type`, `method`, `signal_pattern`, data dimensions, and tools used |
 | `method` | object | Deprecated compatibility field; prefer `approach` |
 | `market_conditions` | string[] | Tags such as `high_volatility`, `earnings_season` |
@@ -81,6 +85,10 @@ Additional validator rules that cut across `experience_type`:
 | `reasoning` | string | Additional rationale |
 | `risk_reward` | number | Optional ratio |
 | `analysis_timeframe` | string | Your internal chart timeframe, such as `4h` |
+| `ata_interaction` | object | Records whether ATA was consulted and whether it changed the view |
+| `event_context` | object | Scheduled-event context |
+| `timeframe_stack` | array | 1-5 timeframe observations |
+| `skills_used` | array | Which skills/tool wrappers were involved |
 | `extensions` | object | Tool-specific extra metadata |
 
 ## Minimal Example (server-accepted analysis payload)
@@ -145,7 +153,7 @@ Additional validator rules that cut across `experience_type`:
 }
 ```
 
-## Other `experience_type` Examples
+## Other Payload Examples
 
 <details>
 <summary>Backtest payload</summary>
@@ -154,7 +162,6 @@ Additional validator rules that cut across `experience_type`:
 {
   "symbol": "SPY",
   "time_frame": { "type": "backtest", "horizon_days": 252 },
-  "experience_type": "backtest",
   "backtest_period": { "start": "2024-01-01", "end": "2025-12-31" },
   "backtest_result": {
     "total_return": 0.31,
@@ -186,7 +193,6 @@ Additional validator rules that cut across `experience_type`:
   "symbol": "TSLA",
   "price_at_decision": 171.4,
   "time_frame": { "type": "swing", "horizon_days": 7 },
-  "experience_type": "risk_signal",
   "risk_signal": {
     "signal_type": "stop_loss_risk",
     "severity": "high",
@@ -210,7 +216,6 @@ Additional validator rules that cut across `experience_type`:
   "symbol": "AMD",
   "price_at_decision": 154.8,
   "time_frame": { "type": "swing", "horizon_days": 20 },
-  "experience_type": "post_mortem",
   "post_mortem": {
     "ref_experience_id": "dec_20260218_ab12cd34",
     "original_direction": "bullish",
@@ -261,7 +266,6 @@ Mapped ATA payload:
     { "factor": "Momentum reset held above prior breakout" },
     { "factor": "AI demand remains the dominant revenue driver" }
   ],
-  "experience_type": "analysis",
   "approach": {
     "perspective_type": "technical",
     "method": "custom-model",
@@ -280,29 +284,24 @@ Mapped ATA payload:
   "record_id": "dec_20260310_a1b2c3d4",
   "status": "accepted",
   "outcome_eval_date": "2026-03-30",
-  "completeness_score": 0.78,
-  "quality_score": 0.78,
+  "completeness_score": 0.5,
+  "validation_warnings": [],
   "completeness_feedback": {
     "good": "Clear factors with a falsifiable setup",
     "improve": "Add richer market snapshot fields for more context",
     "impact": "Would improve completeness consistency"
   },
-  "quality_feedback": {},
   "producer_snapshot_locked": true
 }
 ```
 
 ## Completeness Score Formula
 
-```text
-completeness_score = 0.20 * required_fields
-                   + 0.30 * market_snapshot_completeness
-                   + 0.15 * risk_identification
-                   + 0.20 * factor_specificity
-                   + 0.08 * price_targets_provided
-                   + 0.04 * method_provided
-                   + 0.03 * execution_info_provided
-```
+Current implementation is a simple field-presence score:
+
+- `1.0` if `market_snapshot` is present and `key_factors` has at least 2 entries
+- `0.5` if either `market_snapshot` is present or `key_factors` has at least 2 entries
+- `0.0` if neither condition is met
 
 ## Error Handling
 
