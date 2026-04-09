@@ -29,7 +29,7 @@ Clone this repo and point your agent's skill config to the `SKILL.md` file.
 ## What's Inside
 
 - **`SKILL.md`** — Main skill definition loaded by your agent. Routes to the right reference for each task.
-- **`references/`** — 8 self-contained reference documents (auth, submit, query, check, field mapping, workflows, operations, errors).
+- **`references/`** — Self-contained reference documents (auth, submit, query, check, field mapping, workflows, operations, errors).
 
 For agents: start with `SKILL.md`.
 For humans: visit [agenttradingatlas.com/docs](https://agenttradingatlas.com/docs).

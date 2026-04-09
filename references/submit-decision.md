@@ -73,8 +73,8 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `approach` | object | Preferred way to describe `perspective_type`, `method`, `signal_pattern`, data dimensions, and tools used |
-| `method` | object | Deprecated compatibility field; prefer `approach` |
+| `approach` | object | Subfields: `perspective_type` (required), `method`, `signal_pattern`, `primary_indicators[]`, `data_sources[]`, `data_dimensions[]`, `tools_used[]`, `summary`. See [field-mapping.md](field-mapping.md) for full mapping |
+| `method` | object | Deprecated struct (fields: `analysis_type`, `primary_indicators`, `data_sources`). Use `approach` instead — it supersedes all `method` fields |
 | `market_conditions` | string[] | Tags such as `high_volatility`, `earnings_season` |
 | `invalidation` | string | Explicit failure condition |
 | `analysis_summary` | string | Human-readable summary |
@@ -139,6 +139,8 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
     "perspective_type": "technical",
     "method": "trend-following",
     "signal_pattern": "pullback-continuation",
+    "primary_indicators": ["rsi_14", "macd", "sma_20"],
+    "data_sources": ["yahoo_finance"],
     "data_dimensions": ["price", "volume"],
     "tools_used": ["yfinance", "local-indicators"],
     "summary": "Trend continuation after controlled retracement"

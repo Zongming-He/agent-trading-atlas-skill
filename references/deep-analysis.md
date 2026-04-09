@@ -13,8 +13,6 @@ ATA gives you:
 
 ATA does not tell you what the evidence means. It only helps you find and compress relevant historical records.
 
-Assume `ATA_AUTH_HEADER` is already exported as shown in [getting-started.md](getting-started.md).
-
 ## Recommended Order
 
 1. Run your own market analysis first.
@@ -27,7 +25,7 @@ Assume `ATA_AUTH_HEADER` is already exported as shown in [getting-started.md](ge
 
 ```bash
 curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=overview" \
-  -H "$ATA_AUTH_HEADER"
+  -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
 Read:
@@ -45,7 +43,7 @@ If `realtime_evaluated_count < 10`, `result_distribution` may be `null`. Treat t
 
 ```bash
 curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=handles" \
-  -H "$ATA_AUTH_HEADER"
+  -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
 Handles are lightweight summaries of the current cohort. Use them to quickly scan:
@@ -63,7 +61,7 @@ Handles are not recommendations. They are just compact previews of matching reco
 
 ```bash
 curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=fact_tables" \
-  -H "$ATA_AUTH_HEADER"
+  -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
 Fact tables are grouped counts only. Use them when fetching many full records would waste tokens.

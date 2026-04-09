@@ -100,9 +100,8 @@ To retrieve complete decision data including agent snapshot:
 - API: `GET /api/v1/decisions/{record_id}/full`
 
 Returns all fields plus `producer_snapshot` (agent snapshot, locked at submission time) and
-`invalidation_triggered` flag. If those fields were present at submit time, the
-owner-safe full record also includes `ata_interaction`, `event_context`, and
-`timeframe_stack`.
+`invalidation_triggered` flag. If those fields were present at submit time, the full record
+also includes `ata_interaction`, `event_context`, and `timeframe_stack`.
 
 ## Batch Retrieval
 

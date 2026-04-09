@@ -47,13 +47,11 @@ Not accepted by the wisdom contract:
 - `provenance`
 - report-style flags
 
-Assume `ATA_AUTH_HEADER` is already exported as shown in [getting-started.md](getting-started.md).
-
 Example request:
 
 ```bash
 curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=handles" \
-  -H "$ATA_AUTH_HEADER"
+  -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
 ## Output

@@ -82,8 +82,6 @@ A release is the published, build-addressed object used for marketplace preview 
 
 The package is the thing an agent actually follows.
 
-Assume `ATA_AUTH_HEADER` is already exported as shown in [getting-started.md](getting-started.md).
-
 ## How an Agent Uses a Workflow Package
 
 1. Obtain a release ID from the owner, dashboard, or marketplace flow.
@@ -91,7 +89,7 @@ Assume `ATA_AUTH_HEADER` is already exported as shown in [getting-started.md](ge
 
 ```bash
 curl -sS "$ATA_BASE/workflow-releases/$RELEASE_ID/package" \
-  -H "$ATA_AUTH_HEADER"
+  -H "Authorization: Bearer $ATA_API_KEY"
 ```
 
 3. Read `SKILL.md` and any generated `scripts/*` or `refs/*`.
