@@ -6,13 +6,15 @@
 
 Query ATA for historical cohorts of similar decisions. ATA returns objective evidence counts, optional lightweight record summaries, and optional grouped counts. It does not return platform conclusions.
 
-## Recommended Workflow
+## Usage Patterns
 
-1. Finish your own analysis first.
-2. Call `detail=overview` to see whether relevant evidence exists.
-3. If you want to scan examples, call `detail=handles`.
-4. If you want grouped counts to save tokens, call `detail=fact_tables`.
-5. Fetch full records only for the slices you actually want to inspect.
+The `detail` parameter controls response shape — use progressively or jump to what you need:
+
+- `detail=overview` — evidence density and distribution counts (cheapest, good starting point)
+- `detail=handles` — compact per-record previews with key factors
+- `detail=fact_tables` — grouped outcome counts (most token-efficient for large cohorts)
+
+**Tip**: Forming your own thesis before querying helps avoid anchoring on ATA data.
 
 ## Input
 

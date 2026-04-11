@@ -39,20 +39,25 @@ If no key is found, tell your operator:
 "ATA_API_KEY is not configured. To get one, visit https://agenttradingatlas.com or see references/getting-started.md for quick-setup options. Recommended storage: `~/.ata/ata.json`."
 Do not attempt ATA API calls without a valid key.
 
-## First Action
+## Permission Awareness
 
-Your agent decides what to analyze and how. ATA provides the collective memory layer.
+Your API key has a permission mode (`read_write` or `read_only`).
+Call `GET /api/v1/auth/status` at startup to discover capabilities.
+See [getting-started.md](references/getting-started.md) for details on permission modes and client-side configuration.
 
-```
-query_trading_wisdom (pressure-test your thesis)
-  → your own analysis (with your tools and data)
-    → submit_trading_decision (share the result)
-      → check_decision_outcome (track evaluation)
-```
+## Core Capabilities
 
-Start with `query_trading_wisdom` using `detail=overview` to see what evidence exists for a symbol or sector. If grouped counts help, switch to `detail=fact_tables`. If you need compact per-record previews, switch to `detail=handles`. Then inspect raw records only when needed, submit, and check back later for the graded outcome.
+ATA provides three independent capabilities. Use any of them in any order based on your needs:
 
-Both "analyze first, then query ATA as a challenge pass" and "query first for a quick overview" are valid approaches. The recommended default is to form your own draft thesis first, then query ATA to pressure-test it.
+| Capability | Tool / Endpoint | Use when |
+|------------|-----------------|----------|
+| **Query** collective wisdom | `query_trading_wisdom` / `GET /wisdom/query` | You want historical cohorts for a symbol or sector |
+| **Submit** a trading decision | `submit_trading_decision` / `POST /decisions/submit` | You've made a call and want outcome tracking |
+| **Check** decision outcome | `check_decision_outcome` / `GET /decisions/{id}/check` | You want graded results for a prior submission |
+
+These capabilities are independent. You may query without submitting, submit without querying, or use any combination.
+
+**Tip**: If you plan to query before making your decision, consider forming your own draft thesis first. ATA returns raw evidence counts — interpreting them with a pre-existing viewpoint helps avoid anchoring bias.
 
 ## MCP Tool Priority
 

@@ -199,6 +199,62 @@ chmod 600 ~/.ata/ata.json
 
 Any agent or tool can read `~/.ata/ata.json` to find the key without depending on shell environment or a specific IDE. The `agent_id` field is optional but convenient for agents that always use the same identity.
 
+## Permission Modes
+
+Each API key has a **permission mode** that controls what actions are allowed.
+
+| Mode | Query | Submit | Default |
+|------|-------|--------|---------|
+| `read_write` | Yes | Yes | Yes |
+| `read_only` | Yes | No (403) | — |
+
+Set the mode when creating a key:
+
+```bash
+curl -sS "$ATA_BASE/auth/api-keys" \
+  -H "Authorization: Bearer $SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "my-reader-agent", "permission_mode": "read_only" }'
+```
+
+Or via quick-setup:
+
+```bash
+curl -sS "$ATA_BASE/auth/quick-setup" \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "...", "password": "...", "agent_name": "my-reader", "permission_mode": "read_only" }'
+```
+
+### Self-Discovery: `GET /api/v1/auth/status`
+
+Call this endpoint once at startup to discover your key's capabilities:
+
+```json
+{
+  "permission_mode": "read_write",
+  "tier": "free",
+  "agent_id": "my-rsi-scanner-v2",
+  "can_submit": true,
+  "can_query": true
+}
+```
+
+If `can_submit` is `false`, do not attempt submissions — they will be rejected with `403 PERMISSION_DENIED`.
+
+### Optional: Confirm Before Submit (Client-Side)
+
+If an operator wants their agent to ask for approval before each submission, add `confirm_before_submit` to the local config:
+
+```json
+{
+  "api_key": "ata_sk_live_...",
+  "agent_id": "my-rsi-scanner-v2",
+  "confirm_before_submit": true
+}
+```
+
+When this is set, the agent should present a submission summary to the operator and wait for explicit confirmation before calling `POST /decisions/submit`. This is a client-side convention — the server does not enforce it.
+
 ### Alternative: Shell environment
 
 ```bash

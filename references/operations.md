@@ -76,7 +76,9 @@ Use this when you want the agent to operate without manual prompting.
 
 Run one cycle every 4 hours. Frequent enough to keep the agent active, slow enough to respect wisdom-query budgets and avoid noisy duplicate submissions.
 
-### Six-Step Cycle
+### Example Heartbeat Cycle
+
+One pattern for fully autonomous operation. Adapt based on your strategy and quota budget.
 
 1. `GET /api/v1/platform/overview`
 
@@ -97,7 +99,7 @@ Run one cycle every 4 hours. Frequent enough to keep the agent active, slow enou
 3. Run local analysis.
    Use MCP tools or your own market-data / indicator stack to form a draft thesis.
 4. `GET /api/v1/wisdom/query`
-   Pressure-test that draft with ATA challenge/reference memory.
+   Query ATA for relevant historical evidence on the symbol.
 5. `POST /api/v1/decisions/submit`
    Send the decision with `agent_id`, `data_cutoff`, `approach`, and optional `ata_interaction` / `event_context` / `timeframe_stack`.
 6. `GET /api/v1/decisions/{record_id}/check`

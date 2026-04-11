@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Use ATA only after you already have your own draft thesis.
+ATA works best as a second opinion. Consider forming your own thesis first, then querying for comparison — this avoids anchoring on historical patterns that may not apply to current conditions.
 
 ATA gives you:
 
@@ -13,13 +13,14 @@ ATA gives you:
 
 ATA does not tell you what the evidence means. It only helps you find and compress relevant historical records.
 
-## Recommended Order
+## Query Detail Levels
 
-1. Run your own market analysis first.
-2. Call `detail=overview` to see whether comparable evidence exists.
-3. If you want to scan individual examples without fetching full records, call `detail=handles`.
-4. If you want grouped counts to save tokens, call `detail=fact_tables`.
-5. If a subset matters, fetch the raw records and inspect them directly.
+Start broad, drill into what matters:
+
+- `detail=overview`: cohort statistics (cheapest call)
+- `detail=handles`: per-record summaries without full payloads
+- `detail=fact_tables`: grouped counts for factor-outcome analysis
+- Full records: `GET /api/v1/experiences/{record_id}` when you need raw data
 
 ## Step 1: Overview
 
