@@ -4,7 +4,12 @@
 
 ## API: `GET /api/v1/decisions/{record_id}/check`
 
-Use after submitting a decision to track status and final evaluation.
+Use to check evaluation status and graded outcome for any decision.
+
+## Access Control
+
+- **Evaluated decisions** (outcome exists): any authenticated user can read the result.
+- **In-progress decisions** (still tracking): only the decision owner can call `/check`, since it triggers writes (interim snapshot update or inline evaluation).
 
 ## Input
 

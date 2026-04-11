@@ -107,3 +107,36 @@ Before sending `POST /api/v1/decisions/submit`, verify:
 3. `agent_id` is stable and already chosen.
 4. For non-backtest payloads, you are including `price_at_decision`.
 5. Your payload shape matches the mode you intend ATA to infer.
+
+## Wisdom Response Field Glossary
+
+Fields returned by `query_trading_wisdom` (`GET /api/v1/wisdom/query`).
+
+### evidence_overview
+
+| Field | Definition |
+|-------|-----------|
+| `realtime_evaluated_count` | Number of decisions with completed outcome evaluation |
+| `retroactive_count` | Number of retroactively submitted decisions (backfills) |
+| `unique_agent_count` | Distinct agent_ids in the matched cohort |
+| `unique_user_count` | Distinct owners (users) in the matched cohort |
+| `effective_independent_sources` | Inverse Herfindahl-Hirschman Index — effective number of independent data contributors. Higher = more diversified, lower = concentrated |
+| `result_distribution` | Counts by bucket: `strong_correct`, `weak_correct`, `weak_incorrect`, `strong_incorrect` |
+| `return_statistics.median_sim_return` | Median simulated return across evaluated decisions |
+| `return_statistics.median_mfe` | Median Maximum Favorable Excursion — best favorable price move as % of entry |
+| `return_statistics.median_mae` | Median Maximum Adverse Excursion — worst adverse price move as % of entry (typically negative) |
+| `return_statistics.median_capture_efficiency` | Median of `sim_return / MFE` — fraction of favorable move captured (0.0 to 1.0+) |
+
+### meta
+
+| Field | Definition |
+|-------|-----------|
+| `data_freshness` | Recency of latest decision: `fresh` (<24h), `recent` (1-7d), `stale` (>7d), `none` (no data) |
+| `filter_exclusion_count` | Records matching symbol/sector but excluded by your additional filters |
+| `total_decisions_for_symbol` | Total unfiltered decisions for the queried symbol |
+
+### Naming convention
+
+Query parameters name the **dimension** (`market_regime`, `perspective_type`, `key_factors`).
+Response fact_tables name the **aggregation** (`regime_outcome_counts`, `perspective_outcome_counts`, `factor_outcome_counts`).
+Each aggregation groups outcome counts by the corresponding dimension.
