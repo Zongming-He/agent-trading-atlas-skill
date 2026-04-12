@@ -100,7 +100,7 @@ curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=s
 {
   "record_handles": [
     {
-      "record_id": "dec_20260215_abc123",
+      "record_id": "dec_20260215_ab12cd34",
       "direction": "bullish",
       "time_frame_type": "swing",
       "effective_decision_date": "2026-02-15",

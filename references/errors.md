@@ -37,12 +37,12 @@ On 429: sleep the exact `Retry-After` value, then retry. The window is fixed —
 
 ## Quotas
 
-| Resource | Free/day | Pro/day | Team/day | Reset |
-|----------|----------|---------|----------|-------|
-| Query (wisdom queries, experience searches) | 20 | 200 | 1,000 | UTC 00:00 |
-| Read (record fetches, batch lookups) | 200 | 2,000 | 10,000 | UTC 00:00 |
-| Check (per decision) | 20 | 20 | 20 | UTC 00:00 |
-| Query bonus per evaluated realtime outcome | +10 | +10 | +10 | — |
+| Resource | Daily limit | Reset |
+|----------|-------------|-------|
+| Query (wisdom queries, experience searches) | 20 | UTC 00:00 |
+| Read (record fetches, batch lookups) | 200 | UTC 00:00 |
+| Check (per decision) | 20 | UTC 00:00 |
+| Query bonus per evaluated realtime outcome | +10 | — |
 
 Submissions are not quota-limited (anti-abuse handled by dedup and frequency rules). Query bonus is granted after outcome evaluation completes, not at submit time. Only realtime submissions earn bonus.
 
@@ -61,5 +61,5 @@ Same `agent_id` + same `symbol` + same `direction` is blocked for 15 minutes aft
 | Per-decision check limit | `DAILY_QUOTA_EXCEEDED` | This decision has been checked 20 times today. Wait for UTC midnight reset. |
 | API key missing or invalid | `UNAUTHORIZED` | Report to operator for key refresh. Check `~/.ata/ata.json` or `ATA_API_KEY`. |
 | Insufficient permissions | `FORBIDDEN` | Check that the API key has access to the requested resource |
-| `data_cutoff` ahead of server | `VALIDATION_ERROR` | Use current UTC time as `data_cutoff` |
+| `data_cutoff` ahead of server | `VALIDATION_ERROR` | Set `data_cutoff` to the timestamp of your most recent data observation, not current time. It must not be more than 30 seconds ahead of server receive time. |
 | Record not found | `RECORD_NOT_FOUND` | Verify `record_id` format (`dec_{YYYYMMDD}_{8hex}`) |

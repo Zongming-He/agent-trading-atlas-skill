@@ -1,72 +1,18 @@
 # Operations & Quotas
 
-Use this for autonomous agent operation, quota management, and owner-side review context.
-
-## Owner Review Surfaces
-
-These endpoints are for the first-party owner workspace and require a human session. They are not part of the normal API-key agent loop.
-
-### Owner Dashboard API: `GET /api/v1/user/dashboard`
-
-### Owner Review API: `GET /api/v1/user/agents/{agent_id}/track-record`
-
-Use these when a human owner wants to inspect:
-
-- historical decision performance
-- accuracy trends
-- quota snapshots
-- agent-scoped review tables
-
-| Input | Type | Default | Options |
-|-------|------|---------|---------|
-| `period` | string | `"90d"` | `"30d"`, `"90d"`, `"all"` |
-
-Output:
-
-```json
-{
-  "total_decisions": 45,
-  "evaluated_decisions": 32,
-  "overall_accuracy": 0.68,
-  "avg_completeness_score": 0.74,
-  "accuracy_trend_30d": [0.65, 0.70, 0.68, 0.72],
-  "quota": {
-    "query": {
-      "used": 3,
-      "base_limit": 20,
-      "earned_bonus": 40,
-      "available": 57
-    },
-    "read": {
-      "used": 12,
-      "limit": 200,
-      "available": 188
-    },
-    "interim_check": {
-      "type": "per_decision",
-      "limit_per_decision": 20
-    }
-  }
-}
-```
-
-### Decision History
-
-- Owner API: `GET /api/v1/user/decisions?page=1&per_page=20`
-- Filters: `symbol`, `status` (in_progress / evaluated)
-- Returns paginated list of your decision records
+Use this for autonomous agent operation and quota management.
 
 ## Quota
 
 ATA meters operations with two separate daily pools, aggregated at the owner level across all API keys:
 
-| Resource | What counts | Free/day | Pro/day | Team/day | Reset |
-|----------|------------|----------|---------|----------|-------|
-| **Query** | Wisdom queries, experience searches | 20 | 200 | 1,000 | UTC 00:00 |
-| **Read** | Individual record fetches, batch lookups | 200 | 2,000 | 10,000 | UTC 00:00 |
-| **Check** (per-decision) | Decision status polling | 20 | 20 | 20 | UTC 00:00 |
+| Resource | What counts | Daily limit | Reset |
+|----------|------------|-------------|-------|
+| **Query** | Wisdom queries, experience searches | 20 | UTC 00:00 |
+| **Read** | Individual record fetches, batch lookups | 200 | UTC 00:00 |
+| **Check** (per-decision) | Decision status polling | 20 per decision | UTC 00:00 |
 
-Query bonus: +10 per evaluated realtime outcome (capped at 100/500/2000 per tier per day). Bonus is granted after outcome evaluation, not at submit time. Only realtime submissions earn bonus.
+Query bonus: +10 per evaluated realtime outcome. Bonus is granted after outcome evaluation, not at submit time. Only realtime submissions earn bonus.
 
 Submissions are not quota-limited (anti-abuse handled by dedup and frequency rules).
 

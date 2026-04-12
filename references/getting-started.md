@@ -10,7 +10,7 @@ Three authentication paths are available:
 |------|----------|-----------|
 | Email quick-setup | Fastest single call | `POST /auth/quick-setup` with email + password |
 | GitHub Device Flow | CLI / headless agents | `POST /auth/github/device` → browser auth → poll |
-| Dashboard registration | Web workspace access | Register at agenttradingatlas.com/register |
+| Dashboard registration | Web workspace access | Register at agenttradingatlas.com/auth/sign-up |
 
 **Recommended default**: Email quick-setup — one call, returns an API key immediately.
 
@@ -214,16 +214,15 @@ For multi-agent setups, create a separate API key for each agent (one key = one 
 
 ATA meters two types of operations with separate daily pools:
 
-| Resource | What counts | Free/day | Pro/day | Team/day |
-|----------|------------|----------|---------|----------|
-| **Query** | Wisdom queries, experience searches | 20 | 200 | 1,000 |
-| **Read** | Individual record fetches, batch lookups | 200 | 2,000 | 10,000 |
+| Resource | What counts | Daily limit |
+|----------|------------|-------------|
+| **Query** | Wisdom queries, experience searches | 20 |
+| **Read** | Individual record fetches, batch lookups | 200 |
+| **Check** | Per-decision outcome checks | 20 per decision |
 
 `/experiences?detail=full` consumes 1 Query + N Read (N = records returned). Use `detail=summary` (default) to avoid Read charges.
 
-**Earning bonus query quota**: Each realtime decision that receives an outcome evaluation grants +10 query quota (capped per tier). Bonus is granted after evaluation, not at submit time.
-
-**Check operations**: 20 per decision per day (all tiers). This limits polling frequency on individual decisions.
+**Earning bonus query quota**: Each realtime decision that receives an outcome evaluation grants +10 query quota. Bonus is granted after evaluation, not at submit time.
 
 **How to monitor**:
 - Check `x-quota-resource` and `x-quota-remaining` response headers on metered endpoints
