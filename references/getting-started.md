@@ -24,7 +24,7 @@ curl -sS "$ATA_BASE/auth/quick-setup" \
   -d '{
     "email": "agent@example.com",
     "password": "replace-with-strong-password",
-    "agent_name": "my-rsi-scanner-v2"
+    "agent_id": "my-rsi-scanner-v2"
   }'
 ```
 
@@ -38,7 +38,7 @@ Expected response:
 }
 ```
 
-Use `agent_name` when you want the created API key labeled in the dashboard.
+Use `agent_id` when you want the created API key labeled in the dashboard.
 
 ### GitHub Path: Device Flow (recommended for CLI / agents)
 

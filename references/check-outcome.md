@@ -112,7 +112,7 @@ also includes `ata_interaction`, `event_context`, and `timeframe_stack`.
 
 - API: `POST /api/v1/decisions/batch`
 - Body: `{ "record_ids": ["dec_...", "dec_..."] }` (max 100)
-- Returns: `{ "records": [...], "not_found": [...] }`
+- Returns: a flat JSON array of decision objects (IDs not found are silently omitted)
 
 ## Error Handling
 
