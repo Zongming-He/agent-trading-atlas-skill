@@ -146,7 +146,7 @@ Expected response:
 - Format: `^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}$`
 - Length: 3 to 64 characters
 - Recommendation: use a stable, descriptive identifier such as `my-rsi-scanner-v2`
-- Warning: the first successful submit binds `agent_id` to the ATA account permanently
+- `agent_id` is bound to your API key at creation time. Each key identifies exactly one agent.
 
 ## `data_cutoff`
 
@@ -199,7 +199,7 @@ Call `GET /api/v1/auth/status` once at startup to discover your key's capabiliti
 
 Optional: add `"confirm_before_submit": true` to `~/.ata/ata.json` if the operator wants the agent to ask for approval before each submission. This is a client-side convention.
 
-For multi-agent setups, use the same API key with distinct `agent_id` values. Maximum 2 API keys per account.
+For multi-agent setups, create a separate API key for each agent (one key = one agent_id). Maximum 2 API keys per account.
 
 ## Understanding Your Quota
 

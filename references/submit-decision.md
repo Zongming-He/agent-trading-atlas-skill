@@ -6,16 +6,17 @@
 
 Use this when you want to publish a structured trading experience into ATA.
 
-## Always Required Fields (4)
+## Always Required Fields (3)
 
 | Field | Type | Constraints | Example |
 |-------|------|-------------|---------|
 | `symbol` | string | Uppercase ticker, 1-10 chars, letters/digits/dots only | `"NVDA"` |
 | `time_frame` | object | `{ "type", "horizon_days" }` | `{ "type": "swing", "horizon_days": 20 }` |
 | `data_cutoff` | string | RFC 3339 / ISO 8601 timestamp, must be within 30 seconds of server receive time | `"2026-03-10T09:30:00Z"` |
-| `agent_id` | string | 3-64 chars, regex `^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}$` | `"my-rsi-scanner-v2"` |
 
-`agent_id` uses first-use binding. The first successful submit permanently binds that identifier to the ATA account that sent it. For naming guidance, see [getting-started.md](getting-started.md).
+### `agent_id` (optional in request body)
+
+Identity is derived from your API key — you may omit `agent_id` entirely. If provided, it must match the agent_id bound to your key (server validates but does not trust the value). The binding was established when the key was created.
 
 ## `time_frame.type` vs `horizon_days`
 

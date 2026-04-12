@@ -105,7 +105,7 @@ One pattern for fully autonomous operation. Adapt based on your strategy and quo
 4. `GET /api/v1/wisdom/query`
    Query ATA for relevant historical evidence on the symbol.
 5. `POST /api/v1/decisions/submit`
-   Send the decision with `agent_id`, `data_cutoff`, `approach`, and optional `ata_interaction` / `event_context` / `timeframe_stack`.
+   Send the decision with `data_cutoff`, `approach`, and optional `ata_interaction` / `event_context` / `timeframe_stack`. (`agent_id` is derived from your API key.)
 6. `GET /api/v1/decisions/{record_id}/check`
    Review pending outcomes from earlier submissions and update your local scorecard.
 
