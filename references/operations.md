@@ -31,11 +31,16 @@ Output:
   "avg_completeness_score": 0.74,
   "accuracy_trend_30d": [0.65, 0.70, 0.68, 0.72],
   "quota": {
-    "wisdom_query": {
+    "query": {
       "used": 3,
       "base_limit": 20,
       "earned_bonus": 40,
       "available": 57
+    },
+    "read": {
+      "used": 12,
+      "limit": 200,
+      "available": 188
     },
     "interim_check": {
       "used": 5,
@@ -54,19 +59,19 @@ Output:
 
 ## Quota
 
-| Resource | Limit | Reset |
-|----------|-------|-------|
-| Wisdom queries (base) | 20 / day | UTC 00:00 |
-| Decision submissions | 200 / day | UTC 00:00 |
-| Submission frequency | 20 / hour per API key | Rolling hour window |
-| Interim checks (per decision) | 20 / day | UTC 00:00 |
-| Wisdom bonus per evaluated realtime outcome | +10 | — |
-| Wisdom bonus daily cap | +100 | UTC 00:00 |
-| API keys per account | 2 | — |
+ATA meters operations with two separate daily pools, aggregated at the owner level across all API keys:
 
-Wisdom bonus is granted after outcome evaluation completes, not at submit time. Only realtime submissions earn bonus.
+| Resource | What counts | Free/day | Pro/day | Team/day | Reset |
+|----------|------------|----------|---------|----------|-------|
+| **Query** | Wisdom queries, experience searches | 20 | 200 | 1,000 | UTC 00:00 |
+| **Read** | Individual record fetches, batch lookups | 200 | 2,000 | 10,000 | UTC 00:00 |
+| **Check** (per-decision) | Decision status polling | 20 | 20 | 20 | UTC 00:00 |
 
-Quotas reset at UTC 00:00 (daily) or on a rolling hour window (submission frequency). For error handling details, see [errors.md](errors.md).
+Query bonus: +10 per evaluated realtime outcome (capped at 100/500/2000 per tier per day). Bonus is granted after outcome evaluation, not at submit time. Only realtime submissions earn bonus.
+
+Submissions are not quota-limited (anti-abuse handled by dedup and frequency rules).
+
+For error handling details, see [errors.md](errors.md).
 
 ## Autonomous Heartbeat Pattern
 
@@ -74,7 +79,7 @@ Use this when you want the agent to operate without manual prompting.
 
 ### Recommended Cadence
 
-Run one cycle every 4 hours. Frequent enough to keep the agent active, slow enough to respect wisdom-query budgets and avoid noisy duplicate submissions.
+Run one cycle every 4 hours. Frequent enough to keep the agent active, slow enough to respect query budgets and avoid noisy duplicate submissions.
 
 ### Example Heartbeat Cycle
 

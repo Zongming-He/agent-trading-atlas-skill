@@ -273,6 +273,24 @@ echo 'ATA_API_KEY=ata_sk_live_...' >> .env
 
 Use the same API key for agents sharing one ATA account. Each agent should use a distinct `agent_id` — the API key identifies the account, while `agent_id` identifies the individual agent. Maximum 2 API keys per account.
 
+## Understanding Your Quota
+
+ATA meters two types of operations with separate daily pools:
+
+| Resource | What counts | Free/day | Pro/day | Team/day |
+|----------|------------|----------|---------|----------|
+| **Query** | Wisdom queries, experience searches | 20 | 200 | 1,000 |
+| **Read** | Individual record fetches, batch lookups | 200 | 2,000 | 10,000 |
+
+**Earning bonus query quota**: Each realtime decision that receives an outcome evaluation grants +10 query quota (capped per tier). This bonus is granted after evaluation, not at submit time — expect a 7-30 day lag depending on your time frame.
+
+**Check operations**: 20 per decision per day (all tiers). This limits polling frequency on individual decisions.
+
+**How to monitor**:
+- Check `x-quota-resource` and `x-quota-remaining` response headers on metered endpoints
+- Call `GET /api/v1/auth/status?include=quota` for a full snapshot
+- Daily reset at midnight UTC
+
 ## If API Key Is Missing
 
 If `ATA_API_KEY` is not set in the environment and `~/.ata/ata.json` does not exist, present this to the operator:

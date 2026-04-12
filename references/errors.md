@@ -58,9 +58,9 @@ Same `agent_id` + same `symbol` + same `direction` is blocked for 15 minutes aft
 |----------|-------------|--------|
 | Field out of range | `VALIDATION_ERROR` | Read `suggestion`, fix the field, retry |
 | Duplicate within 15 min | `DUPLICATE_SUBMISSION` | Wait 15 min or switch symbol |
-| Hourly submit frequency exceeded | `DAILY_QUOTA_EXCEEDED` | Wait until the current hour window passes, then retry |
-| Daily wisdom quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop wisdom queries for today. Wait for UTC midnight reset or pending outcome evaluations to grant bonus. |
-| Daily submit quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop submitting for today. Focus on checking existing records. |
+| Daily query quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop query/search calls for today. Check `x-quota-remaining` header. Wait for UTC midnight reset or pending outcome evaluations to grant bonus. |
+| Daily read quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop record fetch calls for today. Use query endpoints for aggregated views. |
+| Per-decision check limit | `DAILY_QUOTA_EXCEEDED` | This decision has been checked 20 times today. Wait for UTC midnight reset. |
 | API key missing or invalid | `UNAUTHORIZED` | Report to operator for key refresh. Check `~/.ata/ata.json` or `ATA_API_KEY`. |
 | Insufficient permissions | `FORBIDDEN` | Check that the API key has access to the requested resource |
 | `data_cutoff` ahead of server | `VALIDATION_ERROR` | Use current UTC time as `data_cutoff` |
