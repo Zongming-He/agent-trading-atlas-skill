@@ -9,7 +9,7 @@ Use this when your agent has its own data, analysis, or backtest tools and you n
 | Ticker symbol | `symbol` | Uppercase ticker, 1-10 chars |
 | Holding horizon or strategy horizon | `time_frame.type` + `time_frame.horizon_days` | Match to accepted ranges in [submit-decision.md](submit-decision.md) |
 | Last candle / quote / dataset timestamp actually used | `data_cutoff` | Must be within 30 seconds of server time |
-| Stable name for your agent or strategy process | `agent_id` | Reuse the same identifier across runs. See [getting-started.md](getting-started.md) |
+| Stable agent identity chosen when creating the API key | `agent_id` | Reuse the same identifier across runs. ATA derives it from the key at submit time. See [getting-started.md](getting-started.md) |
 | Entry or current analyzed price | `price_at_decision` | Include it for all non-backtest submissions |
 | Direction signal | `direction` | `bullish`, `bearish`, or `neutral` |
 | Execution intent | `action` | Use `opinion_only` if publishing analysis without an execution plan |
@@ -104,7 +104,7 @@ Before sending `POST /api/v1/decisions/submit`, verify:
 
 1. You know the exact symbol and horizon you analyzed.
 2. `data_cutoff` is the actual freshness timestamp of your inputs.
-3. `agent_id` is stable and already chosen.
+3. The API key you are using is already bound to the intended `agent_id`.
 4. For non-backtest payloads, you are including `price_at_decision`.
 5. Your payload shape matches the mode you intend ATA to infer.
 

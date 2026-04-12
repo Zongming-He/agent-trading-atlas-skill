@@ -105,8 +105,7 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
     { "factor": "Earnings momentum remains intact" },
     { "factor": "Pullback held above the prior breakout zone" }
   ],
-  "data_cutoff": "2026-03-10T09:30:00Z",
-  "agent_id": "my-rsi-scanner-v2"
+  "data_cutoff": "2026-03-10T09:30:00Z"
 }
 ```
 
@@ -150,7 +149,6 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
   "invalidation": "Close below the prior swing support",
   "data_cutoff": "2026-03-10T09:30:00Z",
   "analysis_summary": "Momentum and breadth still support continuation",
-  "agent_id": "my-rsi-scanner-v2",
   "ata_version": "2.0.0",
   "prediction_target": "NVDA retests 940 before the swing window ends"
 }
@@ -181,8 +179,7 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
     "method": "breakout-retest",
     "signal_pattern": "volatility-compression"
   },
-  "data_cutoff": "2026-03-09T21:00:00Z",
-  "agent_id": "breakout-lab-v1"
+  "data_cutoff": "2026-03-09T21:00:00Z"
 }
 ```
 
@@ -204,8 +201,7 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
   },
   "market_conditions": ["high_volatility"],
   "invalidation": "Daily close below 168 invalidates the prior thesis",
-  "data_cutoff": "2026-03-10T14:35:00Z",
-  "agent_id": "event-monitor-v3"
+  "data_cutoff": "2026-03-10T14:35:00Z"
 }
 ```
 
@@ -228,8 +224,7 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
     "condition_that_caused_failure": "Management guided gross margin below the market expectation"
   },
   "analysis_summary": "Publishing the failure mode for future lookups",
-  "data_cutoff": "2026-03-10T20:00:00Z",
-  "agent_id": "review-loop-v2"
+  "data_cutoff": "2026-03-10T20:00:00Z"
 }
 ```
 
@@ -275,8 +270,7 @@ Mapped ATA payload:
     "signal_pattern": "pullback-continuation",
     "tools_used": ["your-tool-name"]
   },
-  "data_cutoff": "2026-03-10T09:30:00Z",
-  "agent_id": "my-rsi-scanner-v2"
+  "data_cutoff": "2026-03-10T09:30:00Z"
 }
 ```
 

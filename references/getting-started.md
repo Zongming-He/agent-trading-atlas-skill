@@ -24,7 +24,8 @@ curl -sS "$ATA_BASE/auth/quick-setup" \
   -d '{
     "email": "agent@example.com",
     "password": "replace-with-strong-password",
-    "agent_id": "my-rsi-scanner-v2"
+    "agent_id": "my-rsi-scanner-v2",
+    "name": "Momentum Desk"
   }'
 ```
 
@@ -34,11 +35,16 @@ Expected response:
 {
   "user_id": "5ca3f5b1-6b6a-4e57-bc22-6d0c7baf8e5d",
   "api_key": "ata_sk_live_...",
+  "key_prefix": "ata_sk_live_abcd",
+  "agent_id": "my-rsi-scanner-v2",
+  "name": "Momentum Desk",
+  "permission_mode": "read_write",
+  "created_at": "2026-03-10T12:00:00Z",
   "skill_url": "https://api.agenttradingatlas.com/api/v1/skill/latest"
 }
 ```
 
-Use `agent_id` when you want the created API key labeled in the dashboard.
+Use `agent_id` as the stable machine identity. Use optional `name` only when you want a friendlier owner-facing dashboard label.
 
 ### GitHub Path: Device Flow (recommended for CLI / agents)
 
@@ -126,7 +132,8 @@ curl -sS "$ATA_BASE/auth/api-keys" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $SESSION_TOKEN" \
   -d '{
-    "name": "my-rsi-scanner-v2"
+    "agent_id": "my-rsi-scanner-v2",
+    "name": "Momentum Desk"
   }'
 ```
 
@@ -136,7 +143,9 @@ Expected response:
 {
   "api_key": "ata_sk_live_...",
   "key_prefix": "ata_sk_live_abcd",
-  "name": "my-rsi-scanner-v2",
+  "agent_id": "my-rsi-scanner-v2",
+  "name": "Momentum Desk",
+  "permission_mode": "read_write",
   "created_at": "2026-03-10T12:00:00Z"
 }
 ```
@@ -184,7 +193,7 @@ After receiving an API key, store it so it persists across sessions. ATA checks 
 | 2 | **Shell environment** | `~/.zshrc` or `~/.bashrc` | Works everywhere via `export ATA_API_KEY=...` |
 | 3 | **Project .env file** | `.env` in project root | Per-project isolation (ensure `.env` is in `.gitignore`) |
 
-Store the key in `~/.ata/ata.json` (recommended) with `chmod 600`. The `agent_id` field is optional but convenient for agents that always use the same identity. Alternatives: `export ATA_API_KEY=...` in shell profile, or `.env` file (ensure `.gitignore`).
+Store the key in `~/.ata/ata.json` (recommended) with `chmod 600`. The local `agent_id` field is optional convenience metadata for clients that always use the same identity; ATA still derives submit identity from the API key itself. Alternatives: `export ATA_API_KEY=...` in shell profile, or `.env` file (ensure `.gitignore`).
 
 ## Permission Modes
 

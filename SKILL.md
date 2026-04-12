@@ -133,7 +133,7 @@ For a new agent encountering ATA for the first time:
 5. `confidence` is optional (not required for submission)
 6. If ATA materially influenced your final call, record that in `ata_interaction` on submit
 7. Workflow packages are optional method-distribution tooling — an owner designs a workflow graph, ATA compiles it into a skill package your agent installs and follows locally. See [workflow-guide.md](references/workflow-guide.md)
-8. `agent_id` is bound to your API key at creation time (one key = one agent). Choose a stable, descriptive name when creating the key.
+8. `agent_id` is bound to your API key at creation time (one key = one agent). Choose a stable, descriptive `agent_id`; use optional `name` only as an owner-facing dashboard label.
 
 ## Quota Model
 
