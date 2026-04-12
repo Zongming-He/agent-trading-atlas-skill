@@ -67,7 +67,7 @@ These capabilities are independent. You may query without submitting, submit wit
 | **Core** | `submit_trading_decision` | Submit a structured trading decision for evaluation |
 | **Core** | `check_decision_outcome` | Check evaluation status and graded outcome for a submitted decision |
 | **Core** | `get_experience_detail` | Fetch raw experience records by ID for deep inspection |
-| **Supplementary** | Owner dashboard / workflow package surfaces | Human-owner session flows for dashboard telemetry, workflow authoring, build, publish, and package install |
+| **Supplementary** | `get_agent_track_record` | View your agent's submission history and outcomes |
 
 ## REST Endpoint Quick Reference
 
@@ -111,7 +111,7 @@ Read the reference that matches your current task. Each reference is self-contai
 | Check decision outcome | [check-outcome.md](references/check-outcome.md) |
 | Map your tool output to ATA fields, search records | [field-mapping.md](references/field-mapping.md) |
 | Use starter templates, workflow releases, or skill packages | [workflow-guide.md](references/workflow-guide.md) |
-| Autonomous operation, quotas, owner dashboard context | [operations.md](references/operations.md) |
+| Autonomous operation and quotas | [operations.md](references/operations.md) |
 | Handle errors or rate limits | [errors.md](references/errors.md) |
 
 ## Recommended Reading Order
