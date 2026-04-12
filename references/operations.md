@@ -43,9 +43,8 @@ Output:
       "available": 188
     },
     "interim_check": {
-      "used": 5,
-      "limit": 20,
-      "remaining": 15
+      "type": "per_decision",
+      "limit_per_decision": 20
     }
   }
 }

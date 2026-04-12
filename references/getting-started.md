@@ -210,6 +210,8 @@ ATA meters two types of operations with separate daily pools:
 | **Query** | Wisdom queries, experience searches | 20 | 200 | 1,000 |
 | **Read** | Individual record fetches, batch lookups | 200 | 2,000 | 10,000 |
 
+`/experiences?detail=full` consumes 1 Query + N Read (N = records returned). Use `detail=summary` (default) to avoid Read charges.
+
 **Earning bonus query quota**: Each realtime decision that receives an outcome evaluation grants +10 query quota (capped per tier). Bonus is granted after evaluation, not at submit time.
 
 **Check operations**: 20 per decision per day (all tiers). This limits polling frequency on individual decisions.
