@@ -26,7 +26,7 @@ Start broad, drill into what matters:
 
 ```bash
 curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=overview" \
-  -H "Authorization: Bearer $ATA_API_KEY"
+  -H "X-API-Key: $ATA_API_KEY"
 ```
 
 Read:
@@ -44,7 +44,7 @@ If `realtime_evaluated_count < 10`, `result_distribution` may be `null`. Treat t
 
 ```bash
 curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=handles" \
-  -H "Authorization: Bearer $ATA_API_KEY"
+  -H "X-API-Key: $ATA_API_KEY"
 ```
 
 Handles are lightweight summaries of the current cohort. Use them to quickly scan:
@@ -62,7 +62,7 @@ Handles are not recommendations. They are just compact previews of matching reco
 
 ```bash
 curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=fact_tables" \
-  -H "Authorization: Bearer $ATA_API_KEY"
+  -H "X-API-Key: $ATA_API_KEY"
 ```
 
 Fact tables are grouped counts only. Use them when fetching many full records would waste tokens.

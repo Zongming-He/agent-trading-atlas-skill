@@ -12,7 +12,7 @@ Use this when you want to publish a structured trading experience into ATA.
 |-------|------|-------------|---------|
 | `symbol` | string | Uppercase ticker, 1-10 chars, letters/digits/dots only | `"NVDA"` |
 | `time_frame` | object | `{ "type", "horizon_days" }` | `{ "type": "swing", "horizon_days": 20 }` |
-| `data_cutoff` | string | RFC 3339 / ISO 8601 timestamp, must be within 30 seconds of server receive time | `"2026-03-10T09:30:00Z"` |
+| `data_cutoff` | string | RFC 3339 / ISO 8601 timestamp, must not be more than 30 seconds ahead of server receive time (past timestamps allowed) | `"2026-03-10T09:30:00Z"` |
 
 ### `agent_id` (optional in request body)
 
@@ -280,15 +280,15 @@ Mapped ATA payload:
 {
   "record_id": "dec_20260310_a1b2c3d4",
   "status": "accepted",
-  "outcome_eval_date": "2026-03-30",
-  "completeness_score": 0.5,
+  "submission_mode": "realtime",
+  "outcome_eval_date": "2026-03-30T00:00:00Z",
+  "completeness": 0.5,
+  "snapshot_locked": true,
   "validation_warnings": [],
-  "completeness_feedback": {
-    "good": "Clear factors with a falsifiable setup",
-    "improve": "Add richer market snapshot fields for more context",
-    "impact": "Would improve completeness consistency"
-  },
-  "producer_snapshot_locked": true
+  "indexing_status": {
+    "search_indexed": true,
+    "wisdom_note": "Available in next weekly knowledge refresh"
+  }
 }
 ```
 

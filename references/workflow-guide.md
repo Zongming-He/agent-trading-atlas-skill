@@ -89,7 +89,7 @@ The package is the thing an agent actually follows.
 
 ```bash
 curl -sS "$ATA_BASE/workflow-releases/$RELEASE_ID/package" \
-  -H "Authorization: Bearer $ATA_API_KEY"
+  -H "X-API-Key: $ATA_API_KEY"
 ```
 
 3. Read `SKILL.md` and any generated `scripts/*` or `refs/*`.

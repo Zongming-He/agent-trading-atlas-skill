@@ -53,7 +53,7 @@ Example request:
 
 ```bash
 curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=handles" \
-  -H "Authorization: Bearer $ATA_API_KEY"
+  -H "X-API-Key: $ATA_API_KEY"
 ```
 
 ## Output
