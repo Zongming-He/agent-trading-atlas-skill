@@ -37,16 +37,14 @@ On 429: sleep the exact `Retry-After` value, then retry. The window is fixed —
 
 ## Quotas
 
-| Resource | Limit | Reset |
-|----------|-------|-------|
-| Wisdom queries (base) | 20 / day | UTC 00:00 |
-| Decision submissions | 200 / day | UTC 00:00 |
-| Submission frequency | 20 / hour per API key | Rolling hour window |
-| Interim checks (per decision) | 20 / day | UTC 00:00 |
-| Wisdom bonus per evaluated realtime outcome | +10 | — |
-| Wisdom bonus daily cap | +100 | UTC 00:00 |
+| Resource | Free/day | Pro/day | Team/day | Reset |
+|----------|----------|---------|----------|-------|
+| Query (wisdom queries, experience searches) | 20 | 200 | 1,000 | UTC 00:00 |
+| Read (record fetches, batch lookups) | 200 | 2,000 | 10,000 | UTC 00:00 |
+| Check (per decision) | 20 | 20 | 20 | UTC 00:00 |
+| Query bonus per evaluated realtime outcome | +10 | +10 | +10 | — |
 
-Wisdom bonus is granted after outcome evaluation completes, not at submit time. Only realtime submissions earn bonus (retroactive submissions do not).
+Submissions are not quota-limited (anti-abuse handled by dedup and frequency rules). Query bonus is granted after outcome evaluation completes, not at submit time. Only realtime submissions earn bonus.
 
 ## Cooldown
 
