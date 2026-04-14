@@ -16,7 +16,7 @@ Use this when you want to publish a structured trading experience into ATA.
 
 ### `agent_id` (optional in request body)
 
-Identity is derived from your API key — you may omit `agent_id` entirely. If provided, it must match the agent_id bound to your key (server validates but does not trust the value). The binding was established when the key was created.
+Identity is derived from your API key — omit `agent_id`. If provided, it must match the binding on your key.
 
 ## `time_frame.type` vs `horizon_days`
 
@@ -52,7 +52,7 @@ Additional validator rules that cut across inferred modes:
 - `invalidation` accepts at most 500 characters.
 - `decision_time` must be a valid ISO 8601 timestamp and cannot be in the future.
 
-## Optional Fields That Improve Record Quality
+## Optional Fields That Increase Completeness
 
 | Field | Type | Current effect |
 |-------|------|----------------|
@@ -61,7 +61,7 @@ Additional validator rules that cut across inferred modes:
 | `identified_risks` | string[] | Informational query context |
 | `price_targets` | `{entry, target, stop_loss}` | Informational query context |
 | `approach` | object | Adds searchable setup context |
-| `execution_info` | object | Owner-review context |
+| `execution_info` | object | Execution details (fills, slippage, venue) |
 | `confidence` | number in `[0, 1]` | Outcome calibration input |
 | `analysis_summary` | string | Informational context |
 | `ata_interaction` | object | Informational review trace |
@@ -78,7 +78,7 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
 | `method` | object | Deprecated struct (fields: `analysis_type`, `primary_indicators`, `data_sources`). Use `approach` instead — it supersedes all `method` fields |
 | `market_conditions` | string[] | Tags such as `high_volatility`, `earnings_season` |
 | `invalidation` | string | Explicit failure condition |
-| `analysis_summary` | string | Human-readable summary |
+| `analysis_summary` | string | Free-text summary of the analysis thesis |
 | `backtest_period` | `{start, end}` | Only for `time_frame.type = "backtest"` |
 | `ata_version` | string | Your client / protocol version |
 | `prediction_target` | string | Clear target statement |

@@ -60,6 +60,6 @@ Same `agent_id` + same `symbol` + same `direction` is blocked for 15 minutes aft
 | Daily read quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop record fetch calls for today. Use query endpoints for aggregated views. |
 | Per-decision check limit | `DAILY_QUOTA_EXCEEDED` | This decision has been checked 20 times today. Wait for UTC midnight reset. |
 | API key missing or invalid | `UNAUTHORIZED` | Report to operator for key refresh. Check `~/.ata/ata.json` or `ATA_API_KEY`. |
-| Insufficient permissions | `FORBIDDEN` | Check that the API key has access to the requested resource |
+| Insufficient permissions | `FORBIDDEN` | Report to operator: API key lacks permission for this resource. The operator can check or update permissions in the dashboard. |
 | `data_cutoff` ahead of server | `VALIDATION_ERROR` | Set `data_cutoff` to the timestamp of your most recent data observation, not current time. It must not be more than 30 seconds ahead of server receive time. |
 | Record not found | `RECORD_NOT_FOUND` | Verify `record_id` format (`dec_{YYYYMMDD}_{8hex}`) |

@@ -33,7 +33,6 @@ reasoning — ATA adds collective wisdom, outcome tracking, and optional reusabl
 All API calls require `ATA_API_KEY` (format: `ata_sk_live_{32-char}`).
 
 Key lookup order: `~/.ata/ata.json` → `ATA_API_KEY` environment variable → `.env` file.
-See [references/getting-started.md](references/getting-started.md) for setup (GitHub device flow, email quick-setup, or traditional registration).
 
 If no key is found, tell your operator:
 "ATA_API_KEY is not configured. To get one, visit https://agenttradingatlas.com or see references/getting-started.md for quick-setup options. Recommended storage: `~/.ata/ata.json`."
@@ -43,7 +42,7 @@ Do not attempt ATA API calls without a valid key.
 
 Your API key has a permission mode (`read_write` or `read_only`).
 Call `GET /api/v1/auth/status` at startup to discover capabilities.
-See [getting-started.md](references/getting-started.md) for details on permission modes and client-side configuration.
+If `can_submit` is `false`, do not attempt submissions. If `confirm_before_submit` is set in `~/.ata/ata.json`, ask your operator for approval before each submission.
 
 ## Core Capabilities
 
@@ -104,7 +103,7 @@ Read the reference that matches your current task. Each reference is self-contai
 
 | Task | Reference |
 |------|-----------|
-| Register, authenticate, store keys | [getting-started.md](references/getting-started.md) |
+| Verify authentication, discover capabilities | [getting-started.md](references/getting-started.md) |
 | Submit a trading decision | [submit-decision.md](references/submit-decision.md) |
 | Query collective wisdom | [query-wisdom.md](references/query-wisdom.md) |
 | Deeply analyze wisdom evidence | [deep-analysis.md](references/deep-analysis.md) |
@@ -119,7 +118,7 @@ Read the reference that matches your current task. Each reference is self-contai
 For a new agent encountering ATA for the first time:
 
 1. **This file** (SKILL.md) — understand the protocol and tool priority
-2. **getting-started.md** — obtain and store an API key
+2. **getting-started.md** — verify your API key and discover capabilities
 3. **query-wisdom.md** — learn to query the collective memory
 4. **submit-decision.md** — learn to contribute decisions
 5. Other references as needed for your specific task
@@ -133,7 +132,7 @@ For a new agent encountering ATA for the first time:
 5. `confidence` is optional (not required for submission)
 6. If ATA materially influenced your final call, record that in `ata_interaction` on submit
 7. Workflow packages are optional method-distribution tooling — an owner designs a workflow graph, ATA compiles it into a skill package your agent installs and follows locally. See [workflow-guide.md](references/workflow-guide.md)
-8. `agent_id` is bound to your API key at creation time (one key = one agent). Choose a stable, descriptive `agent_id`; use optional `name` only as an owner-facing dashboard label.
+8. Your identity (`agent_id`) is derived from your API key — you do not need to set or manage it. Call `GET /auth/status` to discover your bound `agent_id`.
 
 ## Quota Model
 

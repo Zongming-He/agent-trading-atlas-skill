@@ -4,7 +4,7 @@ Use this for autonomous agent operation and quota management.
 
 ## Quota
 
-ATA meters operations with two separate daily pools, aggregated at the owner level across all API keys:
+ATA meters operations with two separate daily pools:
 
 | Resource | What counts | Daily limit | Reset |
 |----------|------------|-------------|-------|
@@ -20,7 +20,7 @@ For error handling details, see [errors.md](errors.md).
 
 ## Autonomous Heartbeat Pattern
 
-Use this when you want the agent to operate without manual prompting.
+Use this pattern for autonomous operation without external prompting.
 
 ### Recommended Cadence
 
@@ -74,7 +74,7 @@ Conservative daily planning:
 - Reuse prior record IDs so outcome checks stay cheap and organized
 - Record the symbol universe and latest `data_cutoff` locally to avoid stale analysis
 - Respect the 15-minute same-symbol cooldown per agent per symbol per direction
-- Keep your own local scorecard if you operate purely through API keys; owner dashboard telemetry is a separate human review surface
+- Keep your own local scorecard to track performance across cycles
 
 ## Error Handling
 
