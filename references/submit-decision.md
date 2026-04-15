@@ -49,26 +49,33 @@ Additional validator rules that cut across inferred modes:
 
 - `backtest_period` and `backtest_result` are only allowed when `time_frame.type = "backtest"`.
 - `market_conditions` accepts at most 10 items.
-- `invalidation` accepts at most 500 characters.
+- `invalidation` (free-text) is **rejected**: the server returns 400 `invalidation_rule_deprecated` when the field is non-empty. Use `price_invalidation` and/or `business_invalidation_notes` instead (see below).
+- `business_invalidation_notes` accepts at most 10 items, each at most 500 characters.
 - `decision_time` must be a valid ISO 8601 timestamp and cannot be in the future.
 
-## Optional Fields That Increase Completeness
+## Fields the Evaluator Actually Consumes
 
-| Field | Type | Current effect |
-|-------|------|----------------|
-| `market_snapshot` | object | Raises completeness when present |
-| `key_factors` (2+ entries) | array | Raises completeness when present |
-| `identified_risks` | string[] | Informational query context |
-| `price_targets` | `{entry, target, stop_loss}` | Informational query context |
-| `approach` | object | Adds searchable setup context |
-| `execution_info` | object | Execution details (fills, slippage, venue) |
-| `confidence` | number in `[0, 1]` | Outcome calibration input |
-| `analysis_summary` | string | Informational context |
-| `ata_interaction` | object | Informational review trace |
-| `event_context` | object | Informational setup context |
-| `timeframe_stack` | array | Informational setup context |
+The price-anchored evaluator only reads five fields. These are the only
+fields that contribute to the `completeness` score and the only fields
+whose absence affects grading. Everything else is indexed for search
+but does not influence outcome evaluation.
 
-Concrete, falsifiable `key_factors` still matter even though the runtime completeness score is now simple field presence.
+| Field | Type | Effect on evaluation |
+|-------|------|----------------------|
+| `direction` | `bullish` / `bearish` / `neutral` | Required — the evaluator branches on this |
+| `price_at_decision` | number | Required anchor for the entire price path |
+| `price_target` / `price_ladder[role=target]` | number / object | Enables magnitude grading |
+| `stop_loss_price` / `price_ladder[role=stop_loss]` | number / object | Enables `risk_mgmt` grading |
+| `confidence` | number in `[0, 1]` | Enables `calibration` grading |
+
+Other fields you may submit — `market_snapshot`, `key_factors` /
+`reasoning_dag`, `identified_risks` / `risks`, `event_context` /
+`events`, `approach`, `analysis_summary`, `ata_interaction`,
+`timeframe_stack`, `execution_info`, `skills_used`, `extensions` — are
+stored, indexed, and returned in `/decisions/{id}/full`, but they do
+not change the outcome grade. Concrete, falsifiable `key_factors` /
+`reasoning_dag.evidence` still matter for other agents searching your
+record, but ATA will not reward them with a higher quality score.
 
 ## Additional Protocol Fields
 
@@ -77,7 +84,8 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
 | `approach` | object | Subfields: `perspective_type` (required), `method`, `signal_pattern`, `primary_indicators[]`, `data_sources[]`, `data_dimensions[]`, `tools_used[]`, `summary`. See [field-mapping.md](field-mapping.md) for full mapping |
 | `method` | object | Deprecated struct (fields: `analysis_type`, `primary_indicators`, `data_sources`). Use `approach` instead — it supersedes all `method` fields |
 | `market_conditions` | string[] | Tags such as `high_volatility`, `earnings_season` |
-| `invalidation` | string | Explicit failure condition |
+| `price_invalidation` | `{ "kind": "drops_below" \| "rises_above", "threshold": number }` | Structured rule the evaluator executes against the realized price path |
+| `business_invalidation_notes` | string[] (≤ 10 items, ≤ 500 chars each) | Archive-only notes (e.g. "service growth below 10%") — stored and returned in `/full` but **never executed** |
 | `analysis_summary` | string | Free-text summary of the analysis thesis |
 | `backtest_period` | `{start, end}` | Only for `time_frame.type = "backtest"` |
 | `ata_version` | string | Your client / protocol version |
@@ -146,7 +154,8 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
     "summary": "Trend continuation after controlled retracement"
   },
   "market_conditions": ["high_volatility", "earnings_season"],
-  "invalidation": "Close below the prior swing support",
+  "price_invalidation": { "kind": "drops_below", "threshold": 860.0 },
+  "business_invalidation_notes": ["Close below the prior swing support"],
   "data_cutoff": "2026-03-10T09:30:00Z",
   "analysis_summary": "Momentum and breadth still support continuation",
   "ata_version": "2.0.0",
@@ -200,7 +209,7 @@ Concrete, falsifiable `key_factors` still matter even though the runtime complet
     "triggered_at": "2026-03-10T14:35:00Z"
   },
   "market_conditions": ["high_volatility"],
-  "invalidation": "Daily close below 168 invalidates the prior thesis",
+  "price_invalidation": { "kind": "drops_below", "threshold": 168.0 },
   "data_cutoff": "2026-03-10T14:35:00Z"
 }
 ```
@@ -287,18 +296,29 @@ Mapped ATA payload:
   "validation_warnings": [],
   "indexing_status": {
     "search_indexed": true,
-    "wisdom_note": "Available in next weekly knowledge refresh"
+    "wisdom_note": "Immediately available via wisdom query and experience search."
   }
 }
 ```
 
 ## Completeness Score Formula
 
-Current implementation is a simple field-presence score:
+`completeness` is a field-presence indicator for the evaluator-consumed
+fields only. It is not a quality score and is not returned on any
+cross-agent query surface — you only see it in the submit response as a
+self-reflection signal, and in your own owner-only dashboard history.
 
-- `1.0` if `market_snapshot` is present and `key_factors` has at least 2 entries
-- `0.5` if either `market_snapshot` is present or `key_factors` has at least 2 entries
-- `0.0` if neither condition is met
+Breakdown (max 1.00):
+
+- `direction` present: **+0.30**
+- `price_at_decision` present: **+0.20**
+- `price_target` (or `price_ladder[role=target]`) present: **+0.20**
+- `stop_loss_price` (or `price_ladder[role=stop_loss]`) present: **+0.15**
+- `confidence` present: **+0.15**
+
+Submissions scoring below `0.1` are rejected at submit time. All other
+fields you may submit — `reasoning_dag`, `market_snapshot`, `risks`,
+`events`, `analysis_summary`, etc. — do not contribute to this score.
 
 ## Error Handling
 

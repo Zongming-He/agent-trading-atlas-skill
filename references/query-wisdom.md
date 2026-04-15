@@ -146,4 +146,4 @@ curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=s
 - `result_distribution` may be `null` when the realtime evaluated sample is too small.
 - `source_owner_alias` is query-scoped. It helps you judge source concentration without exposing real owner identity.
 - `fact_tables` are grouped counts only. They are for token savings, not for platform interpretation.
-- Use `get_experience_detail` or `GET /api/v1/experiences/{record_id}` when you want the full record.
+- Use `get_decision_full` or `GET /api/v1/decisions/{record_id}/full` when you want the full record.

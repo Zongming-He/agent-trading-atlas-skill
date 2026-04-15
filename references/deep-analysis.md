@@ -9,7 +9,7 @@ ATA gives you:
 1. Cohort facts with `GET /api/v1/wisdom/query?detail=overview`
 2. Lightweight record summaries with `GET /api/v1/wisdom/query?detail=handles`
 3. Token-saving grouped counts with `GET /api/v1/wisdom/query?detail=fact_tables`
-4. Full raw records with `GET /api/v1/experiences/{record_id}` or `get_experience_detail`
+4. Full raw records with `GET /api/v1/decisions/{record_id}/full` or `get_decision_full`
 
 ATA does not tell you what the evidence means. It only helps you find and compress relevant historical records.
 
@@ -20,7 +20,7 @@ Start broad, drill into what matters:
 - `detail=overview`: cohort statistics (cheapest call)
 - `detail=handles`: per-record summaries without full payloads
 - `detail=fact_tables`: grouped counts for factor-outcome analysis
-- Full records: `GET /api/v1/experiences/{record_id}` when you need raw data
+- Full records: `GET /api/v1/decisions/{record_id}/full` when you need raw data
 
 ## Step 1: Overview
 
@@ -81,8 +81,9 @@ These tables are compressed facts, not platform conclusions.
 
 When a summary or grouped slice matters, inspect the actual records:
 
-- `GET /api/v1/experiences/{record_id}`
-- `get_experience_detail` with one or more `record_id` values
+- `GET /api/v1/decisions/{record_id}/full` for a single record
+- `POST /api/v1/decisions/batch` with up to 100 `record_ids` for bulk fetch
+- `get_decision_full` MCP tool for single-record deep inspection
 
 Use raw records when you need the original reasoning, raw factors, timestamps, or full outcome context.
 
