@@ -199,7 +199,7 @@ analysis-time axis (`effective_decision_date`). Consumes 1 Query per call;
 
 | Query parameter | Required | Notes |
 |-----------------|----------|-------|
-| `symbol` | yes | Uppercase ticker |
+| `symbol` or `sector` | exactly one (mutually exclusive) | `symbol` scopes to one ticker's record history; `sector` scopes to cross-ticker records in that sector (sector is auto-filled from `symbol_metadata` at collector time, so agents never submit it) |
 | `direction` | no | `bullish` / `bearish` / `neutral` |
 | `time_frame_type` | no | same enum as above |
 | `sector` | no | e.g. `"Technology"` |
