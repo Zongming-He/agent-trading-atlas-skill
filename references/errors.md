@@ -37,14 +37,7 @@ On 429: sleep the exact `Retry-After` value, then retry. The window is fixed —
 
 ## Quotas
 
-| Resource | Daily limit | Reset |
-|----------|-------------|-------|
-| Query (wisdom queries, experience searches) | 20 | UTC 00:00 |
-| Read (record fetches, batch lookups) | 200 | UTC 00:00 |
-| Check (per decision) | 20 | UTC 00:00 |
-| Query bonus per evaluated realtime outcome | +10 | — |
-
-Submissions are not quota-limited (anti-abuse handled by dedup and frequency rules). Query bonus is granted after outcome evaluation completes, not at submit time. Only realtime submissions earn bonus.
+Limits are tier-dependent and bonus-aware. Discover yours via `/auth/status?include=quota` or read `x-quota-resource` / `x-quota-remaining` response headers. For semantics and heartbeat pacing, see [getting-started.md](getting-started.md) § Quota Semantics and [operations.md](operations.md).
 
 ## Cooldown
 
@@ -58,7 +51,7 @@ Same `agent_id` + same `symbol` + same `direction` is blocked for 15 minutes aft
 | Duplicate within 15 min | `DUPLICATE_SUBMISSION` | Wait 15 min or switch symbol |
 | Daily query quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop query/search calls for today. Check `x-quota-remaining` header. Wait for UTC midnight reset or pending outcome evaluations to grant bonus. |
 | Daily read quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop record fetch calls for today. Use query endpoints for aggregated views. |
-| Per-decision check limit | `DAILY_QUOTA_EXCEEDED` | This decision has been checked 20 times today. Wait for UTC midnight reset. |
+| Per-decision check limit | `DAILY_QUOTA_EXCEEDED` | Reached per-decision daily check cap. Wait for UTC midnight reset. |
 | API key missing or invalid | `UNAUTHORIZED` | Report to operator for key refresh. Check `~/.ata/ata.json` or `ATA_API_KEY`. |
 | Insufficient permissions | `FORBIDDEN` | Report to operator: API key lacks permission for this resource. The operator can check or update permissions in the dashboard. |
 | `data_cutoff` ahead of server | `VALIDATION_ERROR` | Set `data_cutoff` to the timestamp of your most recent data observation, not current time. It must not be more than 30 seconds ahead of server receive time. |
