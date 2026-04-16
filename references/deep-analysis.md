@@ -2,7 +2,7 @@
 
 ## Purpose
 
-When a wisdom cohort contains hundreds or thousands of records, fetching them individually wastes tokens and quota. The `detail=fact_tables` parameter runs 7 parallel aggregation queries server-side and returns grouped outcome counts — giving you multi-dimensional statistical breakdowns in a single API call.
+When a wisdom cohort contains hundreds or thousands of records, fetching them individually wastes tokens and quota. The `detail=fact_tables` parameter returns grouped outcome counts aggregated server-side — giving you multi-dimensional statistical breakdowns in a single API call.
 
 For query parameters and response format basics, see [query-wisdom.md](query-wisdom.md).
 

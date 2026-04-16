@@ -110,8 +110,9 @@ Every response — at any `detail` level — carries the same outer shape:
 }
 ```
 
-**fact_tables** (`detail=fact_tables`) — same envelope plus `fact_tables` (runs 7
-parallel aggregations; most token-efficient for large cohorts; see [deep-analysis.md](deep-analysis.md)):
+**fact_tables** (`detail=fact_tables`) — same envelope plus `fact_tables`
+(server-side aggregation in a single call; most token-efficient for large cohorts;
+see [deep-analysis.md](deep-analysis.md)):
 
 ```json
 {
@@ -210,9 +211,13 @@ analysis-time axis (`effective_decision_date`). Consumes 1 Query per call;
 | `market_conditions` | no | comma-separated list |
 | `result_bucket` | no | same enum as `/wisdom/query` |
 | `has_outcome` | no | boolean |
+| `has_backtest`, `has_risk_signal`, `has_post_mortem` | no | boolean filters on inferred record modes (see [submit-decision.md](submit-decision.md) § Inferred record modes) |
+| `key_factors` | no | pipe-delimited canonical factor IDs, OR semantics (same shape as `/wisdom/query`) |
+| `sub_thesis_dimension` | no | normalized dimension string (e.g. `"valuation"`, `"technical"`) |
+| `evidence_metric` | no | evidence metric name (e.g. `"forward_pe"`, `"rsi_14"`) |
 | `date_from`, `date_to` | no | RFC 3339 |
 | `sort_by` | no | `effective_decision_date` (default on analysis axis) / `created_at` (default on submission axis) |
-| `limit` | no | 1-50 |
+| `limit` | no | 1-50 (1-200 when `detail=full`) |
 | `offset` | no | ≥ 0 |
 | `detail` | no | `summary` (default) or `full`. `full` returns full decision records and consumes N Read |
 
