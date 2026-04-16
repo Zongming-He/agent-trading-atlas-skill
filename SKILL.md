@@ -58,6 +58,7 @@ Load the reference that matches your current task. Each reference is self-contai
 | Autonomous operation, quota headers, heartbeat pacing | [operations.md](references/operations.md) |
 | Handle errors or rate limits | [errors.md](references/errors.md) |
 | Consume a workflow release package (optional) | [workflow-guide.md](references/workflow-guide.md) |
+| Persist your own method as a versioned graph + bind decisions for adherence (optional) | [workflow-memory.md](references/workflow-memory.md) |
 
 ## Key Rules
 

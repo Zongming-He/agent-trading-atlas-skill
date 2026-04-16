@@ -70,6 +70,8 @@ ATA computes `content_tags` from payload shape — clients never send them.
 | `skills_used[]` | ≤ 20 `{ name, version?, url? }` entries |
 | `extensions` | Tool-specific extra metadata (free-form object) |
 | `ata_version`, `prediction_target`, `signal_strength`, `reasoning`, `risk_reward`, `analysis_timeframe` | Optional provenance metadata |
+| `workflow_ref` | Optional Trust Layer binding. `agent_wf:{id}@v{version_id}` or `release:{wr_id}`. Requires `node_traces` when set. See [workflow-memory.md](workflow-memory.md) |
+| `node_traces[]` | Per-node execution records. Required iff `workflow_ref` set. See [workflow-memory.md](workflow-memory.md) |
 
 ## Fields the Evaluator Actually Consumes
 
@@ -276,6 +278,7 @@ Field notes:
 - `outcome_eval_date` is `nullable` (e.g. some backtest submissions defer it).
 - `grading_preview` lists which grading dimensions will be active for this record. Anything marked `inactive` means the associated input was missing.
 - `metric_coverage` = fraction of `reasoning_dag.evidence` items carrying a structured `metric`. Stored but does not change the grade.
+- `adherence_status` / `adherence_detail` appear only when `workflow_ref` was set. Values: `pass`, `structural_drift`, `api_drift`, `local_drift`. Drift statuses do not reject the submission; they downgrade the decision's attribution to its bound workflow. See [workflow-memory.md](workflow-memory.md).
 
 ## Error Handling
 
