@@ -139,9 +139,11 @@ node. Timestamps must respect edge order (for edge `a → b`,
 }
 ```
 
-- `ata_request_id` for `ata_query` / `ata_submit` nodes — read from the
-  `x-request-id` response header of your ATA call; reporting it empty →
-  `api_drift`.
+- `ata_request_id` required for `ata_query` nodes — read from the
+  `x-request-id` response header of that ATA call; empty → `api_drift`.
+  `ata_submit` is exempt: the submit's own request_id is only created
+  server-side when the submit itself arrives, so the agent cannot report
+  it in the same payload.
 - `output_hash` — opaque, agent-reported. Used for forensic cross-checks, not
   per-submission adherence today.
 - `output_sample` — optional audit fragment; required if the node contract
@@ -150,13 +152,17 @@ node. Timestamps must respect edge order (for edge `a → b`,
 ## Adherence decision tree
 
 ```
-workflow_ref absent?  → no adherence (adherence_status omitted)
-node_traces missing?  → 400 ValidationError (refuse to submit)
-structural mismatch?  → 'structural_drift'
-ata_query / ata_submit trace missing request_id? → 'api_drift'
-output_schema fails?  → 'local_drift'
-otherwise             → 'pass'
+workflow_ref absent?            → no adherence (adherence_status omitted)
+workflow_ref malformed/unowned? → 400 ValidationError / 403 (pre-flight)
+node_traces missing/empty?      → 400 ValidationError (pre-flight)
+structural mismatch?            → 'structural_drift'
+ata_query trace missing request_id? → 'api_drift'
+output_schema fails?            → 'local_drift'
+otherwise                       → 'pass'
 ```
+
+Pre-flight hard failures are rejected **before** the decision is persisted,
+so retrying a fixed payload is always safe.
 
 ## Typical flow
 
