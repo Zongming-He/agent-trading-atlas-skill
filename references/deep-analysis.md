@@ -1,95 +1,92 @@
-# Deep Analysis of Wisdom Evidence
+# Aggregation Layer Reference
 
 ## Purpose
 
-ATA works best as a second opinion. Consider forming your own thesis first, then querying for comparison — this avoids anchoring on historical patterns that may not apply to current conditions.
+When a wisdom cohort contains hundreds or thousands of records, fetching them individually wastes tokens and quota. The `detail=fact_tables` parameter runs 7 parallel aggregation queries server-side and returns grouped outcome counts — giving you multi-dimensional statistical breakdowns in a single API call.
 
-ATA gives you:
+For query parameters and response format basics, see [query-wisdom.md](query-wisdom.md).
 
-1. Cohort facts with `GET /api/v1/wisdom/query?detail=overview`
-2. Lightweight record summaries with `GET /api/v1/wisdom/query?detail=handles`
-3. Token-saving grouped counts with `GET /api/v1/wisdom/query?detail=fact_tables`
-4. Full raw records with `GET /api/v1/decisions/{record_id}/full` or `get_decision_full`
+## When to Use
 
-ATA does not tell you what the evidence means. It only helps you find and compress relevant historical records.
+- `detail=overview` gives cohort-level counts (cheapest call, good for checking if evidence exists)
+- `detail=handles` gives per-record previews (useful when the cohort is small enough to scan)
+- **`detail=fact_tables`** gives grouped aggregations (most token-efficient for large cohorts)
+- `GET /api/v1/decisions/{record_id}/full` gives raw records (when you need original reasoning)
 
-## Query Detail Levels
+Use `fact_tables` when you want to analyze patterns across a large cohort without fetching individual records.
 
-Start broad, drill into what matters:
+## Fact Table Specifications
 
-- `detail=overview`: cohort statistics (cheapest call)
-- `detail=handles`: per-record summaries without full payloads
-- `detail=fact_tables`: grouped counts for factor-outcome analysis
-- Full records: `GET /api/v1/decisions/{record_id}/full` when you need raw data
+All tables only include realtime submissions with evaluated outcomes. Each row contains outcome bucket counts: `strong_correct`, `weak_correct`, `weak_incorrect`, `strong_incorrect`, `total`.
 
-## Step 1: Overview
+### 1. `factor_outcome_counts`
 
-```bash
-curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=overview" \
-  -H "X-API-Key: $ATA_API_KEY"
-```
+Groups by **normalized key-factor name** extracted from each record.
 
-Read:
+- Minimum 3 occurrences per factor
+- Top 20 by total count descending
+- Use to identify which factors historically correlated with correct or incorrect outcomes
 
-- `evidence_overview.realtime_evaluated_count`
-- `evidence_overview.retroactive_count`
-- `evidence_overview.unique_user_count`
-- `evidence_overview.effective_independent_sources`
-- `evidence_overview.time_range`
-- `evidence_overview.result_distribution` when present
+### 2. `temporal_outcome_counts`
 
-If `realtime_evaluated_count < 10`, `result_distribution` may be `null`. Treat that as “sample too small for a bucket summary”.
+Groups by **decision age** relative to today, in 4 fixed buckets:
 
-## Step 2: Handles
+| Period | Range |
+|--------|-------|
+| `0-14d` | Last 2 weeks |
+| `15-60d` | 2 weeks to 2 months |
+| `61-180d` | 2 to 6 months |
+| `180d+` | Older than 6 months |
 
-```bash
-curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=handles" \
-  -H "X-API-Key: $ATA_API_KEY"
-```
+Use to check whether recent evidence diverges from historical patterns.
 
-Handles are lightweight summaries of the current cohort. Use them to quickly scan:
+### 3. `perspective_outcome_counts`
 
-- `record_id`
-- `result_bucket`
-- `effective_decision_date`
-- `key_factor_preview`
-- `source_owner_alias`
-- `created_regime`
+Groups by **perspective_type** (`technical`, `fundamental`, `sentiment`, `quantitative`, `macro`, `alternative`, `composite`).
 
-Handles are not recommendations. They are just compact previews of matching records.
+- Ordered by total count descending
+- Use to see which analytical approaches produced better outcomes for this cohort
 
-## Step 3: Fact Tables
+### 4. `regime_outcome_counts`
 
-```bash
-curl -sS "$ATA_BASE/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing&detail=fact_tables" \
-  -H "X-API-Key: $ATA_API_KEY"
-```
+Groups by **market_regime** (`bull`, `bear`, `sideways`, `volatile`).
 
-Fact tables are grouped counts only. Use them when fetching many full records would waste tokens.
+- Ordered by total count descending
+- Gracefully omitted if the query fails (not all records have regime data)
+- Use to check whether outcomes vary by market regime
 
-Available grouped tables:
+### 5. `sub_thesis_dimension_counts`
 
-- `result_distribution`
-- `factor_outcome_counts`
-- `temporal_outcome_counts`
-- `perspective_outcome_counts`
-- `regime_outcome_counts`
+Groups by **reasoning dimension x stance** from structured `reasoning_dag` sub-theses.
 
-These tables are compressed facts, not platform conclusions.
+- Joins `decision_sub_theses` table (relational, not JSONB expansion)
+- Groups by `normalized_dimension` + `stance`
+- Minimum 3 occurrences, top 30 by count descending
+- Use to analyze which reasoning dimensions (e.g. `momentum × bullish`) led to correct outcomes
 
-## Step 4: Raw Records
+### 6. `evidence_metric_outcome_counts`
 
-When a summary or grouped slice matters, inspect the actual records:
+Groups by **evidence metric name** from structured `reasoning_dag` evidence.
 
-- `GET /api/v1/decisions/{record_id}/full` for a single record
-- `POST /api/v1/decisions/batch` with up to 100 `record_ids` for bulk fetch
-- `get_decision_full` MCP tool for single-record deep inspection
+- Joins `decision_evidence` table (relational, not JSONB expansion)
+- Groups by `metric_name` (e.g. `rsi_14`, `pe_ratio`, `macd_signal`)
+- Minimum 3 occurrences, top 50 by count descending
+- Use to identify which quantitative metrics were associated with correct or incorrect calls
 
-Use raw records when you need the original reasoning, raw factors, timestamps, or full outcome context.
+### 7. `result_distribution`
+
+The overall outcome distribution for the entire matched cohort. Same data as in `detail=overview`, included here for convenience so you do not need a separate call.
+
+## Progressive Refinement Strategy
+
+1. Start with `detail=overview` to check if the cohort has meaningful data.
+2. If `realtime_evaluated_count` is large, use `detail=fact_tables` to get aggregated breakdowns.
+3. If a specific table row is interesting (e.g. a factor with high `strong_incorrect`), use `detail=handles` or fetch raw records to inspect individual cases.
+4. If `detail=fact_tables` is too coarse for your question, fetch raw records and compute your own grouping.
 
 ## Fallback Rules
 
 - If `detail=overview` shows no useful evidence, stop and rely on your own analysis.
-- If `detail=handles` returns too many records, use `detail=fact_tables` to compress first.
-- If `detail=fact_tables` is too coarse, fetch raw records and compute your own grouping.
-- If `result_distribution` is `null`, do not infer a base rate from a tiny sample.
+- If `result_distribution` is `null`, the evaluated sample is too small for bucket summaries.
+- Do not infer a base rate from a tiny sample.
+- Tables 5-6 (`sub_thesis_dimension_counts`, `evidence_metric_outcome_counts`) require submissions with structured `reasoning_dag` data and may be empty for older cohorts.

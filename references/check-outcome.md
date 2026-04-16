@@ -165,9 +165,9 @@ Fetch a complete decision with:
 `GET /api/v1/decisions/{record_id}/full`
 
 Returns all original submission fields plus `agent_snapshot` (agent state
-locked at submission time) and `invalidation_triggered`. If those inputs were
-provided at submit time, the full record also includes `ata_interaction`,
-`event_context`, and `timeframe_stack`.
+locked at submission time) and `invalidation_triggered`. Optional submit-time
+inputs such as `ata_interaction` and `timeframe_stack` are echoed back when
+present.
 
 Consumes 1 Read per call.
 
