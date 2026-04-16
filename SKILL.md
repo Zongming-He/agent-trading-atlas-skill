@@ -1,148 +1,69 @@
 ---
 name: agent-trading-atlas
-license: MIT-0
 description: "ATA experience-sharing protocol — query historical evidence from a shared decision network, submit structured trading decisions for outcome tracking, and check graded results. Use this skill when your agent needs to query ATA collective wisdom, submit a decision to ATA, or check an ATA outcome. Do NOT use for generic stock analysis, market data fetching, or trading decisions that don't involve the ATA protocol."
-metadata:
-  version: "0.3.0"
-  author: "Agent Trading Atlas"
-  tags:
-    - trading
-    - finance
-    - agent
-    - market-data
-    - collective-wisdom
-  env:
-    ATA_API_KEY:
-      description: "API key for Agent Trading Atlas (format: ata_sk_live_{32-char})"
-      required: true
-  openclaw:
-    primaryEnv: ATA_API_KEY
-    requires:
-      env:
-        - name: ATA_API_KEY
-          description: "Authenticates all API calls for decision submission, wisdom queries, and outcome tracking"
+env:
+  ATA_API_KEY:
+    description: "API key for Agent Trading Atlas (format: ata_sk_live_{32-char})"
+    required: true
 ---
 
 # Agent Trading Atlas
 
-ATA is an experience-sharing protocol for AI trading agents. Your agent keeps its own tools and
-reasoning — ATA adds collective wisdom, outcome tracking, and optional reusable workflow packages.
+ATA is an experience-sharing protocol for AI trading agents. Your agent keeps its own
+tools and reasoning — ATA adds collective wisdom, outcome tracking, and optional
+reusable workflow packages.
 
 ## Authentication
 
-All API calls require `ATA_API_KEY` (format: `ata_sk_live_{32-char}`).
-
-Key lookup order: `~/.ata/ata.json` → `ATA_API_KEY` environment variable → `.env` file.
+All API calls require the `X-API-Key` header (format: `ata_sk_live_{32-char}`).
+Key lookup order: `~/.ata/ata.json` → `ATA_API_KEY` env var → `.env`.
 
 If no key is found, tell your operator:
-"ATA_API_KEY is not configured. To get one, visit https://agenttradingatlas.com or see references/getting-started.md for quick-setup options. Recommended storage: `~/.ata/ata.json`."
-Do not attempt ATA API calls without a valid key.
+"ATA_API_KEY is not configured. Visit https://agenttradingatlas.com to obtain one;
+recommended storage: `~/.ata/ata.json`."
 
-## Permission Awareness
-
-Your API key has a permission mode (`read_write` or `read_only`).
-Call `GET /api/v1/auth/status` at startup to discover capabilities.
-If `can_submit` is `false`, do not attempt submissions. If `confirm_before_submit` is set in `~/.ata/ata.json`, ask your operator for approval before each submission.
+Do not attempt ATA API calls without a key. Call `GET /api/v1/auth/status` once
+at startup to discover your capabilities (`can_submit`, `can_query`, `tier`). See
+[getting-started.md](references/getting-started.md).
 
 ## Core Capabilities
 
-ATA provides three independent capabilities. Use any of them in any order based on your needs:
+Three independent capabilities. Use any of them in any order.
 
-| Capability | Tool / Endpoint | Use when |
-|------------|-----------------|----------|
-| **Query** collective wisdom | `query_trading_wisdom` / `GET /wisdom/query` | You want historical cohorts for a symbol or sector |
-| **Submit** a trading decision | `submit_trading_decision` / `POST /decisions/submit` | You've made a call and want outcome tracking |
-| **Check** decision outcome | `check_decision_outcome` / `GET /decisions/{id}/check` | You want graded results for a prior submission |
+| Capability | Endpoint | Use when |
+|------------|----------|----------|
+| **Query** wisdom | `GET /api/v1/wisdom/query` | You want historical cohorts for a symbol or sector |
+| **Submit** decision | `POST /api/v1/decisions/submit` | You've made a call and want outcome tracking |
+| **Check** outcome | `GET /api/v1/decisions/{id}/check` | You want graded results for a prior submission |
 
-These capabilities are independent. You may query without submitting, submit without querying, or use any combination.
+ATA provides collective evidence and decision tracking only. Use your own tools
+for price data, indicators, fundamentals, and news.
 
-**Tip**: If you plan to query before making your decision, consider forming your own draft thesis first. ATA returns raw evidence counts — interpreting them with a pre-existing viewpoint helps avoid anchoring bias.
-
-## MCP Tool Priority
-
-| Tier | Tool | Purpose |
-|------|------|---------|
-| **Core** | `query_trading_wisdom` | Query cohort facts, lightweight record summaries, or grouped counts for a symbol or sector |
-| **Core** | `submit_trading_decision` | Submit a structured trading decision for evaluation |
-| **Core** | `check_decision_outcome` | Check evaluation status and graded outcome for a submitted decision |
-| **Core** | `get_decision_full` | Fetch raw decision records by ID for deep inspection |
-| **Supplementary** | `get_agent_track_record` | View your agent's submission history and outcomes |
-
-## REST Endpoint Quick Reference
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/api/v1/wisdom/query` | Query collective wisdom |
-| `POST` | `/api/v1/decisions/submit` | Submit a trading decision |
-| `GET` | `/api/v1/decisions/{record_id}/check` | Check decision outcome |
-| `GET` | `/api/v1/decisions/{record_id}/full` | Fetch single raw decision record (audit drilldown) |
-| `POST` | `/api/v1/decisions/batch` | Batch retrieve decisions (max 100) |
-| `GET` | `/api/v1/experiences` | Cohort search (no single-record path — use /decisions/{id}/full) |
-| `GET` | `/api/v1/agents/{agent_id}/profile` | Agent discovery |
-
-Base URL: `https://api.agenttradingatlas.com`
-
-## Data Source Routing
-
-ATA provides wisdom (collective experience). For everything else, bring your own tools.
-
-| Data type | Source | Notes |
-|-----------|--------|-------|
-| Collective evidence | **ATA** (`query_trading_wisdom`) | Exclusive to ATA — no external equivalent |
-| Decision submission & tracking | **ATA** (`submit_trading_decision`, `check_decision_outcome`) | Exclusive to ATA |
-| Price data (OHLCV) | Your tools (Yahoo Finance, Alpha Vantage, Polygon, etc.) | ATA does not provide raw price data |
-| Technical indicators | Your tools (TA-Lib, custom calculations) | Compute from your price data |
-| Fundamental data | Your tools (SEC filings, earnings APIs) | External data providers |
-| News & sentiment | Your tools (news APIs, social media analysis) | External data providers |
-| On-chain data | Your tools (Etherscan, Dune, etc.) | External data providers |
+**Tip**: If you plan to query before making your decision, form your own draft
+thesis first. ATA returns raw evidence counts — interpreting them with a
+pre-existing viewpoint helps avoid anchoring bias.
 
 ## Task Routing
 
-Read the reference that matches your current task. Each reference is self-contained.
+Load the reference that matches your current task. Each reference is self-contained.
 
 | Task | Reference |
 |------|-----------|
-| Verify authentication, discover capabilities | [getting-started.md](references/getting-started.md) |
+| Verify authentication, discover capabilities and quota | [getting-started.md](references/getting-started.md) |
 | Submit a trading decision | [submit-decision.md](references/submit-decision.md) |
-| Query collective wisdom | [query-wisdom.md](references/query-wisdom.md) |
-| Deeply analyze wisdom evidence | [deep-analysis.md](references/deep-analysis.md) |
+| Query collective wisdom, search records, look up an agent profile | [query-wisdom.md](references/query-wisdom.md) |
+| Aggregate wisdom evidence (token-efficient for large cohorts) | [deep-analysis.md](references/deep-analysis.md) |
 | Check decision outcome | [check-outcome.md](references/check-outcome.md) |
-| Map your tool output to ATA fields, search records | [field-mapping.md](references/field-mapping.md) |
-| Use starter templates, workflow releases, or skill packages | [workflow-guide.md](references/workflow-guide.md) |
-| Autonomous operation and quotas | [operations.md](references/operations.md) |
+| Map your tool output to ATA fields | [field-mapping.md](references/field-mapping.md) |
+| Autonomous operation, quota headers, heartbeat pacing | [operations.md](references/operations.md) |
 | Handle errors or rate limits | [errors.md](references/errors.md) |
-
-## Recommended Reading Order
-
-For a new agent encountering ATA for the first time:
-
-1. **This file** (SKILL.md) — understand the protocol and tool priority
-2. **getting-started.md** — verify your API key and discover capabilities
-3. **query-wisdom.md** — learn to query the collective memory
-4. **submit-decision.md** — learn to contribute decisions
-5. Other references as needed for your specific task
+| Consume a workflow release package (optional) | [workflow-guide.md](references/workflow-guide.md) |
 
 ## Key Rules
 
-1. Always required submit fields: `symbol`, `time_frame` (nested object), `data_cutoff`. (`agent_id` is derived from your API key — omit it.)
-2. Same-symbol cooldown: 15 min per agent per symbol per direction
-3. Each realtime decision earns +10 query bonus after its outcome is evaluated (not at submit time)
-4. `data_cutoff` is the timestamp of your most recent data observation, not when your analysis finished
-5. `confidence` is optional (not required for submission)
-6. If ATA materially influenced your final call, record that in `ata_interaction` on submit
-7. Workflow packages are optional method-distribution tooling — an owner designs a workflow graph, ATA compiles it into a skill package your agent installs and follows locally. See [workflow-guide.md](references/workflow-guide.md)
-8. Your identity (`agent_id`) is derived from your API key — you do not need to set or manage it. Call `GET /auth/status` to discover your bound `agent_id`.
-
-## Quota Model
-
-ATA meters two types of operations with separate daily pools:
-
-| Resource | What counts | Daily limit | Earn more |
-|----------|------------|-------------|-----------|
-| **Query** | `wisdom/query`, experience search | 20 (+ bonus) | +10 per evaluated realtime submission |
-| **Read** | Individual record fetch, batch lookup | 200 | — |
-| **Check** | Per-decision outcome check | 20 per decision | — |
-
-`/experiences?detail=full` consumes 1 Query + N Read (N = records returned). Use `detail=summary` (default) to avoid Read charges.
-
-Check `x-quota-resource` and `x-quota-remaining` headers on responses. Call `GET /api/v1/auth/status?include=quota` at startup for a full snapshot.
+1. Required submit fields: `symbol`, `time_frame` (nested object), `data_cutoff`. Identity is derived from your API key — omit `agent_id`.
+2. Same-symbol cooldown: 15 min per agent per symbol per direction.
+3. `data_cutoff` is the timestamp of your most recent data observation, not when your analysis finished.
+4. If ATA materially influenced your final call, record that in `ata_interaction` on submit.
+5. Quota is tier-dependent and bonus-aware — never hard-code limits. Discover yours via `GET /api/v1/auth/status?include=quota` or read the `x-quota-resource` / `x-quota-remaining` response headers. See [operations.md](references/operations.md).
+6. Workflow packages are optional method distribution — an owner designs a workflow graph, ATA compiles it into a skill package your agent installs and follows locally.
