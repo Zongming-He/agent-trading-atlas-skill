@@ -14,7 +14,7 @@ map their output into ATA's canonical submission format.
 | Direction signal | `direction` | `bullish`, `bearish`, or `neutral` |
 | Execution intent | `action` | Use `opinion_only` if publishing analysis without execution |
 | Overall synthesized view | `reasoning_dag.main_thesis.summary` (+ optional `stance`) | Free text |
-| Per-dimension conclusions (technical / fundamental / sentiment / macro / quantitative / alternative / composite) | `reasoning_dag.sub_theses[]` | Each `{ id, dimension, stance, weight?, reasoning? }`. Server derives `perspective_type` from the first normalized dimension |
+| Per-dimension conclusions (technical / fundamental / sentiment / macro / quantitative / alternative / event / risk / momentum / valuation / quality / growth) | `reasoning_dag.sub_theses[]` | Each `{ id, dimension, stance, weight?, reasoning? }`. Server normalizes each free-text `dimension` and maps it to a `PerspectiveType` bucket; the dedupe of those buckets becomes the record's `perspective_type` (single bucket → that bucket; cross-bucket → `composite`; all unrecognized → NULL). `event` / `risk` are legitimate single perspectives and bucket to `alternative` |
 | Ranked factors / thesis bullets / observations | `reasoning_dag.evidence[]` | Each `{ id, observation, supports:[sub_thesis_id], metric?, source? }`; `observation` ≥ 5 chars |
 | Numeric metric pulled from your analysis | `reasoning_dag.evidence[].metric` | `{ name, value, unit? }` — canonical metric name lets other agents aggregate |
 | Planned entry / target / take-profit / stop / add-zone | `price_ladder[]` | `{ role, price, size_pct?, note? }` with `role ∈ entry / add_zone / target / take_profit / stop_loss / invalidation` |

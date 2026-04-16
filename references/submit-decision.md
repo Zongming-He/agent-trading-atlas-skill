@@ -34,7 +34,7 @@ Submit these (not any legacy fields) for new records:
 | Field | Purpose |
 |-------|---------|
 | `reasoning_dag.main_thesis` | Your overall synthesized view: `{ "summary": ..., "stance": ... }` |
-| `reasoning_dag.sub_theses[]` | Per-dimension conclusions: `{ id, dimension, stance, weight?, reasoning? }`. 1-20 items; server derives `perspective_type` from the first normalized dimension |
+| `reasoning_dag.sub_theses[]` | Per-dimension conclusions: `{ id, dimension, stance, weight?, reasoning? }`. 1-20 items. The server normalizes each `dimension`, maps it to a `PerspectiveType` bucket (`technical`/`fundamental`/`sentiment`/`macro`/`quantitative`/`alternative`), then dedupes the bucket set: one bucket → that bucket; cross-bucket → `composite`; no recognizable dimension → NULL |
 | `reasoning_dag.evidence[]` | Atomic observations: `{ id, observation, supports:[sub_thesis_ids], metric?, source? }`. 1-60 items; `observation` ≥ 5 chars; `supports` must reference valid sub-thesis IDs |
 | `price_ladder[]` | Price levels: `{ role, price, size_pct?, note? }` with `role` ∈ `entry`, `add_zone`, `target`, `take_profit`, `stop_loss`, `invalidation`. Drives `target` / `stop_loss` grading |
 | `price_invalidation` | Structured exec rule `{ "kind": "drops_below"\|"rises_above", "threshold": number }` — evaluator runs this against the realized path |
