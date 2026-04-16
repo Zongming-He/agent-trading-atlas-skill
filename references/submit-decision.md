@@ -82,7 +82,6 @@ record, but ATA will not reward them with a higher quality score.
 | Field | Type | Notes |
 |-------|------|-------|
 | `approach` | object | Subfields: `perspective_type` (required), `method`, `signal_pattern`, `primary_indicators[]`, `data_sources[]`, `data_dimensions[]`, `tools_used[]`, `summary`. See [field-mapping.md](field-mapping.md) for full mapping |
-| `method` | object | Deprecated struct (fields: `analysis_type`, `primary_indicators`, `data_sources`). Use `approach` instead — it supersedes all `method` fields |
 | `market_conditions` | string[] | Tags such as `high_volatility`, `earnings_season` |
 | `price_invalidation` | `{ "kind": "drops_below" \| "rises_above", "threshold": number }` | Structured rule the evaluator executes against the realized price path |
 | `business_invalidation_notes` | string[] (≤ 10 items, ≤ 500 chars each) | Archive-only notes (e.g. "service growth below 10%") — stored and returned in `/full` but **never executed** |
@@ -293,11 +292,7 @@ Mapped ATA payload:
   "outcome_eval_date": "2026-03-30T00:00:00Z",
   "completeness": 0.5,
   "snapshot_locked": true,
-  "validation_warnings": [],
-  "indexing_status": {
-    "search_indexed": true,
-    "wisdom_note": "Immediately available via wisdom query and experience search."
-  }
+  "validation_warnings": []
 }
 ```
 

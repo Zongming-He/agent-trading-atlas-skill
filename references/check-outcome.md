@@ -57,8 +57,6 @@ Use to check evaluation status and graded outcome for any decision.
     "evaluation_version": "paper_portfolio",
     "review_score": 3.7,
     "review_grade": "A-",
-    "overall_score": 3.7,
-    "overall_grade": "A-",
     "metrics": {
       "direction_correct": true,
       "sim_return": 0.052,
