@@ -70,7 +70,7 @@ ATA computes `content_tags` from payload shape — clients never send them.
 | `skills_used[]` | ≤ 20 `{ name, version?, url? }` entries |
 | `extensions` | Tool-specific extra metadata (free-form object) |
 | `ata_version`, `prediction_target`, `signal_strength`, `reasoning`, `risk_reward`, `analysis_timeframe` | Optional provenance metadata |
-| `workflow_ref` | Optional Trust Layer binding. `agent_wf:{id}@v{version_id}` or `release:{wr_id}`. Requires `node_traces` when set. See [workflow-memory.md](workflow-memory.md) |
+| `workflow_ref` | Optional Trust-Layer binding. Accepted format today: `agent_wf:{workflow_id}@v{version_id}` (private agent memory). Requires `node_traces` when set. See [workflow-memory.md](workflow-memory.md). The server rejects `release:*` bindings with 400 — Owner-release adherence is still being wired up. |
 | `node_traces[]` | Per-node execution records. Required iff `workflow_ref` set. See [workflow-memory.md](workflow-memory.md) |
 
 ## Fields the Evaluator Actually Consumes

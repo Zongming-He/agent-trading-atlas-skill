@@ -5,16 +5,30 @@ graph, bind each decision to a specific version, and let the platform verify
 that you actually executed what you designed.
 
 Workflow Memory is **optional**. Core Protocol (`submit`, `wisdom/query`,
-`check`) works without it. Memory adds: method persistence across restarts,
-per-version performance attribution, and adherence-verified decisions.
+`check`) works without it. What memory gives you today:
+
+- Method **persistence** across restarts — a stable `workflow_id` and a
+  versioned, immutable graph history your agent can reload.
+- **Adherence verification** — each bound decision is checked against the
+  version's graph, and the verdict (`pass` / `*_drift`) is recorded on the
+  decision record.
+- **Record-level attribution** — every bound decision carries its own
+  `workflow_ref` and `adherence_status`, readable back from
+  `GET /decisions/{id}/full`. Per-version aggregate accuracy ("method v3
+  vs v4 win-rate") is **not yet computed by the platform**; the
+  `perf_snapshot` field on a version is reserved for this and stays
+  `null` today. Agents that want it should keep their own local
+  scorecard of `(workflow_ref, record_id, outcome)` until the platform
+  rolls it out.
 
 ## When to use
 
 | Situation | Use memory? |
 |-----------|-------------|
 | You run the same analysis pattern repeatedly and want to iterate | Yes — persist as a workflow, bump versions |
-| You want per-method accuracy stats (this method v3 vs v4) | Yes — binding lets the platform attribute outcomes |
-| You want a consumer of your Owner's published release to be verifiable | Yes — bind to `release:…` (coming soon) |
+| You want auditable "did I follow my own design?" evidence on each decision | Yes — bind via `workflow_ref` |
+| You want the platform to compute per-version win-rates for you | Not yet — roll your own scorecard |
+| You want to bind against an Owner-published `release:*` and have it verified | Not yet — server currently rejects `release:*` with 400; use `agent_wf:*` until Owner-release adherence ships |
 | One-off exploratory analysis | No — submit freestyle |
 
 ## How it fits with Core Protocol
@@ -22,9 +36,10 @@ per-version performance attribution, and adherence-verified decisions.
 You touch Core Protocol the same way as always. Memory adds two optional
 fields to `POST /decisions/submit`:
 
-- `workflow_ref` — a string that resolves to a method graph.
-  - `agent_wf:{workflow_id}@v{version_id}` — private workflow you created
-  - `release:{release_id}` — Owner-published release (adherence check planned)
+- `workflow_ref` — a string that resolves to a method graph. Accepted
+  format **today**: `agent_wf:{workflow_id}@v{version_id}` (private agent
+  memory). `release:{release_id}` is parsed but the server returns 400
+  until Owner-release adherence is wired up.
 - `node_traces` — per-node execution records that the adherence check
   compares against the graph. **Required** when `workflow_ref` is set.
 
@@ -127,23 +142,26 @@ node. Timestamps must respect edge order (for edge `a → b`,
       "node_id": "n_wisdom",
       "started_at": "2026-03-24T09:30:03Z",
       "ended_at":   "2026-03-24T09:30:04Z",
-      "ata_request_id": "req_01HWK0..."
+      "ata_request_id": "3d4c1a2e-8f0b-4a77-9ab2-1c0f7b8d41e6"
     },
     {
       "node_id": "n_submit",
       "started_at": "2026-03-24T09:30:07Z",
-      "ended_at":   "2026-03-24T09:30:08Z",
-      "ata_request_id": "req_01HWK1..."
+      "ended_at":   "2026-03-24T09:30:08Z"
     }
   ]
 }
 ```
 
-- `ata_request_id` required for `ata_query` nodes — read from the
-  `x-request-id` response header of that ATA call; empty → `api_drift`.
-  `ata_submit` is exempt: the submit's own request_id is only created
-  server-side when the submit itself arrives, so the agent cannot report
-  it in the same payload.
+- `ata_request_id` is required **only for `ata_query` nodes** — read it
+  from the `x-request-id` response header of the ATA call you just made.
+  The server currently emits that header as a UUIDv4 string. Omitting it
+  on an `ata_query` trace → `api_drift`.
+- `ata_submit` nodes are exempt from the request_id requirement. The
+  server generates the submit's own request_id only when the request
+  lands, so the agent physically cannot include it in the same payload.
+  The trace is still required for structural adherence (timestamps,
+  edge order), but `ata_request_id` on an `ata_submit` trace is ignored.
 - `output_hash` — opaque, agent-reported. Used for forensic cross-checks, not
   per-submission adherence today.
 - `output_sample` — optional audit fragment; required if the node contract
@@ -193,7 +211,10 @@ curl -sS "$ATA_BASE/decisions/submit" \
 
 # ← 201 {"record_id":"dec_…", "adherence_status":"pass", ...}
 
-# 3. After samples accumulate, read envelope for per-version perf
+# 3. After samples accumulate, re-read envelope to audit version history.
+#    Each version is returned with perf_snapshot = null today; per-version
+#    aggregate stats are not yet computed by the platform. For per-record
+#    evidence, fetch /decisions/{id}/full and inspect adherence_status.
 curl -sS "$ATA_BASE/agent-workflows/wf_agent_20260324_ab12cd34" \
   -H "X-API-Key: $ATA_API_KEY"
 

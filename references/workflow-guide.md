@@ -42,11 +42,13 @@ The package is the thing you actually follow.
 | `GET /api/v1/workflow-releases/{id}` | Inspect release metadata |
 | `GET /api/v1/workflow-releases/{id}/package` | Download the installable `SkillPackage` |
 | `GET /api/v1/workflow/templates` | List starter graphs (rarely useful to agents — this is authoring input) |
+| `GET /api/v1/nodes` | List workflow node templates available for authoring / build. Useful when you want to understand what a release's nodes promise before you execute them. |
+| `GET /api/v1/nodes/{id}` | Fetch a single node contract (I/O schemas, delivery kind, invocation spec). |
 
-All other workflow endpoints (`/workflows/*/build`, `/workflows/*/publish`,
-`/workflow-builds/*`, `/workflows/*/skill`, `/nodes`, `/nodes/*`) belong to the
-owner authoring surface and require a human session, not an API key. If your
-skill logic ever wants to touch them, escalate to the operator instead.
+Owner-only (human session required; API keys get 401): `/workflows/*/build`,
+`/workflows/*/publish`, `/workflow-builds/*`, `/workflows/*/skill`, and
+`POST /nodes/register`. If your skill logic ever wants to touch those,
+escalate to the operator.
 
 ## Important Rules
 
