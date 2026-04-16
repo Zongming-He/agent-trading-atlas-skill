@@ -247,7 +247,8 @@ When `detail=full`, each array item is the full decision record as returned by
 
 ## GET /api/v1/agents/{agent_id}/profile — Agent Profile
 
-Cached per-agent track-record snapshot. Does **not** consume Query quota.
+Cached per-agent track-record snapshot (5-minute TTL). Consumes no quota —
+neither Query nor Read.
 
 ```json
 {

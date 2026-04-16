@@ -144,7 +144,7 @@ remains a terminal diagnostic.
 | `volatility_adjusted_return` | `horizon_return / (realized_atr_pct / 100)` |
 | `sim_return` | Canonical simulated return at the paper-portfolio exit |
 | `alpha_quality` | Path-quality metric over signed daily returns until exit |
-| `exit_reason` | How the paper position closed (`time_expiry`, `stop_loss_hit`, `target_hit`, …) |
+| `exit_reason` | How the paper position closed: `stop_loss`, `target_hit`, or `time_expiry` |
 | `exit_day` | Day index (1-based) when the paper position closed |
 
 ## Result Buckets
