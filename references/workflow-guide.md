@@ -1,57 +1,40 @@
-# Workflow Package Guide (Agent Side)
+# Workflow Package Consumption
 
-Use this when an owner has pointed you at a workflow release and you need to
-install or follow it. Workflow packages are optional — the core protocol
-(`/wisdom/query`, `/decisions/submit`, `/decisions/{id}/check`) works without
-them.
+How an API-key agent installs and follows an Owner-published workflow
+release. Packages are optional; Core Protocol works without them.
 
-## What a Workflow Package Is
+## Consume a release
 
-An owner authors a workflow graph on the dashboard; ATA compiles it into an
-immutable release that contains a portable skill package. Your agent installs
-the package and runs the steps locally. ATA does **not** execute workflow
-nodes server-side, proxy data fetches, or manage session state for you.
+```bash
+curl -sS "$ATA_BASE/workflow-releases/$RELEASE_ID/package" \
+  -H "X-API-Key: $ATA_API_KEY"
+```
 
-## How an Agent Uses a Workflow Package
+Returns a `SkillPackage` with `SKILL.md`, `manifest.json`, `workflow.json`,
+`contracts.json`, and generated `scripts/` / `refs/`. Follow the SKILL.md
+inside; run fetch / compute / synthesis locally; call ATA only where the
+package instructs (typically `/wisdom/query`, `/decisions/submit`,
+`/decisions/{id}/check`).
 
-1. Obtain a release id from your operator, the dashboard, or a marketplace link.
-2. Fetch the package:
+## Agent-readable endpoints
 
-   ```bash
-   curl -sS "$ATA_BASE/workflow-releases/$RELEASE_ID/package" \
-     -H "X-API-Key: $ATA_API_KEY"
-   ```
+| Endpoint | Use |
+|----------|-----|
+| `GET /api/v1/workflow-releases/{id}` | release metadata |
+| `GET /api/v1/workflow-releases/{id}/package` | download the installable package |
+| `GET /api/v1/workflow/templates` | list starter graphs (authoring input, rarely useful to agents) |
+| `GET /api/v1/nodes` | list node templates available for authoring / build |
+| `GET /api/v1/nodes/{id}` | single node contract (I/O schemas, delivery kind, invocation spec) |
 
-3. Read `SKILL.md` inside the returned `SkillPackage`, along with any generated
-   `scripts/*` and `refs/*` files it ships.
-4. Run the local steps yourself — market-data fetch, indicator calculation,
-   technical / fundamental / sentiment analysis. ATA never performs these.
-5. Call ATA only where the package's instructions say to:
-   - `GET /api/v1/wisdom/query`
-   - `POST /api/v1/decisions/submit`
-   - `GET /api/v1/decisions/{record_id}/check`
+## Owner-only (API key → 403 Forbidden)
 
-A `SkillPackage` typically contains `SKILL.md`, `manifest.json`,
-`workflow.json`, `contracts.json`, plus generated `scripts/` and `refs/`.
-The package is the thing you actually follow.
+`/workflows`, `/workflows/{id}`, `/workflows/{id}/build`,
+`/workflows/{id}/publish`, `/workflows/{id}/skill`,
+`/workflow-builds/*`, `POST /nodes/register` — all require a human owner
+session. Calling them with an API key returns 403.
 
-## Read-Only Endpoints You May Need
+## Rules
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /api/v1/workflow-releases/{id}` | Inspect release metadata |
-| `GET /api/v1/workflow-releases/{id}/package` | Download the installable `SkillPackage` |
-| `GET /api/v1/workflow/templates` | List starter graphs (rarely useful to agents — this is authoring input) |
-| `GET /api/v1/nodes` | List workflow node templates available for authoring / build. Useful when you want to understand what a release's nodes promise before you execute them. |
-| `GET /api/v1/nodes/{id}` | Fetch a single node contract (I/O schemas, delivery kind, invocation spec). |
-
-Owner-only (human session required; API keys get 401): `/workflows/*/build`,
-`/workflows/*/publish`, `/workflow-builds/*`, `/workflows/*/skill`, and
-`POST /nodes/register`. If your skill logic ever wants to touch those,
-escalate to the operator.
-
-## Important Rules
-
-- Do not look for workflow sessions or remote node execution — neither exists.
-- Keep raw market data local. If the package's instructions say to submit a derived value, submit that one value through the core protocol.
-- Treat workflow packages as optional method distribution; the core protocol is always enough on its own.
+- No remote node execution exists — ATA does not run nodes server-side.
+- Keep raw market data local; submit only the derived fields the
+  package's Core Protocol steps ask for.

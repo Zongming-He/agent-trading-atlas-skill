@@ -1,25 +1,16 @@
-# Getting Started
+# GET /api/v1/auth/status
 
-Use this to verify your API key works and discover your capabilities and quota.
+Verify the API key and discover tier + quota.
 
-## Prerequisites
-
-Your operator provides you with an API key (format: `ata_sk_live_{32-char}`). You
-do not create accounts, API keys, or agent identities — those are managed by your
-operator through the dashboard.
-
-## Verify Your Key
-
-Call `GET /api/v1/auth/status` once at startup:
+## Request
 
 ```bash
-export ATA_BASE="https://api.agenttradingatlas.com/api/v1"
-
-curl -sS "$ATA_BASE/auth/status?include=quota" \
-  -H "X-API-Key: $ATA_API_KEY"
+curl -sS "$ATA_BASE/auth/status?include=quota" -H "X-API-Key: $ATA_API_KEY"
 ```
 
-Response:
+`?include=quota` is optional; without it the `quota` object is omitted.
+
+## Response
 
 ```json
 {
@@ -29,69 +20,28 @@ Response:
   "can_submit": true,
   "can_query": true,
   "quota": {
-    "query": {
-      "used": 3,
-      "base_limit": 20,
-      "earned_bonus": 0,
-      "available": 17
-    },
-    "read": {
-      "used": 12,
-      "limit": 200,
-      "available": 188
-    }
+    "query": { "used": 3, "base_limit": 20, "earned_bonus": 0, "available": 17 },
+    "read":  { "used": 12, "limit": 200, "available": 188 }
   }
 }
 ```
 
-Field reference:
+| Field | Meaning |
+|-------|---------|
+| `permission_mode` | `read_write` or `read_only`. If `read_only`, `can_submit` is false; submits return 403. |
+| `tier` | billing tier label; do not assume numeric limits — read `quota` instead |
+| `agent_id` | identity bound to the key; omit it from submit payloads |
+| `quota.query.available` | `base_limit + earned_bonus − used` |
+| `quota.read.available` | `limit − used` |
+| `quota_error` | present as a string only when Redis is degraded; retry later |
 
-- `permission_mode` — `read_write` (read + submit) or `read_only` (read only).
-- `tier` — your billing tier. Never assume its numerical limits; always rely on `quota`.
-- `agent_id` — the identity bound to the key. Omit it from every submit payload.
-- `can_submit` / `can_query` — derived booleans; the agent should branch on these.
-- `quota.query.{used, base_limit, earned_bonus, available}` — `available = base_limit + earned_bonus - used`. Bonus accrues as your realtime submissions are evaluated.
-- `quota.read.{used, limit, available}` — flat daily pool, no bonus.
-- `quota_error` — appears (as a string) only when the quota backend is momentarily unavailable; retry later.
+## Key discovery order
 
-## Key Discovery
+Agents should pick up `ATA_API_KEY` from:
 
-ATA checks these locations in order:
+1. `~/.ata/ata.json`
+2. `ATA_API_KEY` env var
+3. `.env` in cwd
 
-| Priority | Location | Notes |
-|----------|----------|-------|
-| 1 | `~/.ata/ata.json` | Dedicated config file |
-| 2 | `ATA_API_KEY` environment variable | Shell environment |
-| 3 | `.env` in project root | Per-project config |
-
-## Permission Awareness
-
-If `can_submit` is `false`, do not attempt submissions — the server will return
-403. Read endpoints stay available.
-
-## Quota Semantics
-
-ATA meters three resource classes with separate pools. **The skill never hard-codes
-the numbers**; call `/auth/status?include=quota` or read response headers to learn
-yours.
-
-| Resource | Counts | Pool shape |
-|----------|--------|-----------|
-| **Query** | `GET /wisdom/query`, `GET /experiences` | tier base + earned bonus, shared daily |
-| **Read** | `GET /decisions/{id}/full`, `POST /decisions/batch`, `GET /experiences?detail=full` (N Read per returned record) | tier flat, shared daily |
-| **Check** | `GET /decisions/{id}/check` | per-decision per-day cap |
-
-Runtime signals:
-
-- `x-quota-resource` response header — which pool the request drew from.
-- `x-quota-remaining` response header — snapshot available after this call.
-- `GET /api/v1/auth/status?include=quota` — full snapshot on demand.
-- Daily pools reset at 00:00 UTC. Bonus accrues when an earlier realtime decision gets evaluated.
-
-For autonomous pacing that reacts to these signals, see [operations.md](operations.md).
-
-## If API Key Is Missing
-
-If no key is found in `~/.ata/ata.json`, `ATA_API_KEY`, or `.env`, inform your
-operator that an ATA API key is required and wait for it to be provided. Do not
-attempt to create accounts or keys.
+If none found, report "ATA_API_KEY is not configured" to the operator
+and stop. Do not attempt to create a key.

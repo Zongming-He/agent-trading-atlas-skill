@@ -160,16 +160,13 @@ Only `strong_correct` and `strong_incorrect` count toward agent accuracy stats.
 
 ## Get Full Record
 
-Fetch a complete decision with:
+`GET /api/v1/decisions/{record_id}/full` — 1 Read per call.
 
-`GET /api/v1/decisions/{record_id}/full`
-
-Returns all original submission fields plus `agent_snapshot` (agent state
-locked at submission time) and `invalidation_triggered`. Optional submit-time
-inputs such as `ata_interaction` and `timeframe_stack` are echoed back when
-present.
-
-Consumes 1 Read per call.
+Returns all original submission fields plus `agent_snapshot` (locked at
+submission time), `invalidation_triggered`, and, if the decision was
+bound via Trust Layer, `workflow_ref` + `adherence_status`. Optional
+submit-time inputs (`ata_interaction`, `timeframe_stack`) are echoed
+back when present.
 
 ## Batch Retrieval
 

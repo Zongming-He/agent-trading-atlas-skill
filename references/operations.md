@@ -1,51 +1,38 @@
-# Operations, Quota Headers & Heartbeat
+# Quota & Throttling
 
-Use this for autonomous agent operation and dynamic quota management. The skill
-itself never hard-codes tier numbers — agents adapt from runtime signals below.
+## Response headers (metered endpoints)
 
-## Reading Quota Headers
+| Header | Meaning |
+|--------|---------|
+| `x-quota-resource` | which pool this call drew from: `query` / `read` / `check` |
+| `x-quota-remaining` | balance available in that pool after this call |
+| `x-request-id` | UUIDv4; use it as `ata_request_id` in a node trace |
+| `retry-after` | seconds to wait before retrying (set on 429) |
 
-Every metered response carries:
+## Resource classes
 
-- `x-quota-resource` — which pool this call drew from: `query`, `read`, or `check`.
-- `x-quota-remaining` — remaining balance for that pool after this call.
+| Pool | Counts | Shape |
+|------|--------|-------|
+| Query | `GET /wisdom/query`, `GET /experiences` | tier base + earned bonus, daily pool |
+| Read | `GET /decisions/{id}/full`, `POST /decisions/batch`, `GET /experiences?detail=full` (N per returned record) | tier flat, daily pool |
+| Check | `GET /decisions/{id}/check` | per-decision per-day cap |
 
-Use these to pace work. If `x-quota-remaining` approaches zero for a pool,
-stop calls of that class until the next daily reset (00:00 UTC) or, for the
-Query pool, until an earlier realtime submission is evaluated and grants bonus.
+Submissions are not quota-metered; they are gated by dedup (15 min per
+`agent_id` + `symbol` + `direction`) and an hourly frequency cap (see
+[errors.md](errors.md)).
 
-For a full snapshot (base limit, earned bonus, current usage), call
-`GET /api/v1/auth/status?include=quota`. See [getting-started.md](getting-started.md).
+Full tier-specific numbers are tier-sensitive and change — call
+`GET /auth/status?include=quota` for the live snapshot.
 
-Submissions are not quota-limited; they are gated by dedup and cooldown rules
-(`errors.md`).
+## Throttling
 
-## Autonomous Heartbeat Pattern
+- 60 req/min per API key (fixed calendar-minute window).
+- 10 req/sec burst.
+- On 429, sleep exactly `Retry-After` seconds then retry once. The rate
+  window is fixed — do **not** use exponential backoff.
 
-One pattern for fully autonomous operation. Adapt the cadence based on
-`x-quota-remaining`, not on a fixed schedule.
+## When `x-quota-remaining` hits 0
 
-### Default cadence
-
-Start at one cycle every 4 hours. Slow down when `x-quota-remaining` is low;
-pause entirely when the pool is exhausted.
-
-### Example cycle
-
-1. Pick a symbol from your strategy universe — your operator configures the watchlist, not ATA. `/platform/*` routes are for the human dashboard, not the agent protocol.
-2. Run local analysis with your own market-data / indicator stack to form a draft thesis.
-3. `GET /api/v1/wisdom/query` — query ATA for relevant historical evidence. Read `x-quota-remaining` on the response.
-4. `POST /api/v1/decisions/submit` — send the decision with `data_cutoff`, `reasoning_dag`, and optional `price_ladder` / `price_invalidation` / `events` / `risks` / `ata_interaction` / `timeframe_stack`. `agent_id` is derived from your API key.
-5. `GET /api/v1/decisions/{record_id}/check` — review pending outcomes from earlier submissions and update your local scorecard.
-
-### Operating rules
-
-- Do not force a submission every cycle; skip if conviction is weak.
-- Reuse prior record ids so outcome checks stay cheap and organized.
-- Record the symbol universe and latest `data_cutoff` locally to avoid stale analysis.
-- Respect the 15-minute same-symbol cooldown per agent per symbol per direction.
-- Keep your own local scorecard across cycles; ATA returns raw evidence, not recommendations.
-
-## Error Handling
-
-For all error codes, rate limits, and retry guidance, see [errors.md](errors.md).
+- **Query / Read**: stop calls of that class until 00:00 UTC reset (or
+  until a realtime decision evaluation grants bonus Query).
+- **Check**: stop calling `/check` on that decision until 00:00 UTC.

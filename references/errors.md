@@ -37,7 +37,7 @@ On 429: sleep the exact `Retry-After` value, then retry. The window is fixed —
 
 ## Quotas
 
-Limits are tier-dependent and bonus-aware. Discover yours via `/auth/status?include=quota` or read `x-quota-resource` / `x-quota-remaining` response headers. For semantics and heartbeat pacing, see [getting-started.md](getting-started.md) § Quota Semantics and [operations.md](operations.md).
+Limits are tier-dependent. Discover yours via `/auth/status?include=quota` or read `x-quota-resource` / `x-quota-remaining` response headers. See [operations.md](operations.md).
 
 ## Cooldown
 

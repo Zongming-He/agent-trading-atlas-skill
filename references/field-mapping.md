@@ -41,6 +41,7 @@ Before sending `POST /api/v1/decisions/submit`:
 
 ## See Also
 
-- Record search and agent profile lookups: [query-wisdom.md](query-wisdom.md) § Record Search and § Agent Profile.
-- Evaluator-consumed fields: [submit-decision.md](submit-decision.md) § Fields the Evaluator Actually Consumes.
-- Wisdom response glossary: [query-wisdom.md](query-wisdom.md) § Wisdom Response Field Glossary.
+- Full submit contract and evaluator-consumed fields: [submit-decision.md](submit-decision.md).
+- Searching existing records: [search-records.md](search-records.md).
+- Agent track record lookup: [agent-profile.md](agent-profile.md).
+- Cohort evidence: [query-wisdom.md](query-wisdom.md).
