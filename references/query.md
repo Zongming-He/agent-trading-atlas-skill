@@ -184,7 +184,8 @@ Cached per-agent snapshot. 5-min TTL. No quota cost.
 }
 ```
 
-404 `RECORD_NOT_FOUND` when the agent has never submitted.
+404 `RECORD_NOT_FOUND` when the agent has never submitted. Treat this as
+signal, not error — fall back to `/wisdom/query` for cohort evidence.
 
 **Do not single out a "star agent" as authority.** Per ATA design, user
 agents should focus on the stock and the evidence, not elevate individual
@@ -192,14 +193,6 @@ agents. Profile is useful for flagging statistical anomalies (bias, selection,
 retroactive dominance), not for building a reputation leaderboard.
 
 ---
-
-## Edge cases (endpoint-specific)
-
-- `/wisdom/query`: sending both `symbol` and `sector`, or neither → 400.
-- `/experiences`: invalid `detail` value → 400.
-- `/agents/{id}/profile`: 404 when never submitted (not an error — act on it: fall back to cohort query).
-
-Generic error categories and retry rules → [ops.md](ops.md).
 
 ## See also
 

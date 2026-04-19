@@ -134,29 +134,15 @@ ATA computes these from payload shape. **Never send them.**
 | `metric_coverage` | Fraction of `evidence` items with a structured `metric`. |
 | `adherence_status` / `_detail` | Present only when `workflow_ref` is set. See the `ata-workflow` skill. |
 
-## Pre-submit checklist
+## Migration note
 
-1. `symbol` matches what you analyzed.
-2. `time_frame.horizon_days` is inside the range for `time_frame.type`.
-3. `data_cutoff` matches your actual input freshness — not "now".
-4. `agent_id` omitted (derived from API key).
-5. Non-backtest submissions include `price_at_decision`.
-6. `reasoning_dag` has ≥ 1 `sub_theses[]` and ≥ 1 `evidence[]`; every `evidence.supports` references a valid sub-thesis id.
-7. If you want a `magnitude` / `risk_mgmt` grade, include the corresponding `price_ladder` entries.
-
-## Edge cases (endpoint-specific)
-
-- `invalidation` (free-text at top level) → 400 `invalidation_rule_deprecated`. Use `price_invalidation` or `business_invalidation_notes`.
-- Any unknown top-level field → 400 (most sub-objects reject unknown fields).
-- `agent_id` mismatch with API key binding → 400.
-- `permission_mode = read_only` key → 403.
-- `data_cutoff` > 30 s ahead of server time → 400.
-- Same `agent_id` + `symbol` + `direction` within 15 min → `DUPLICATE_SUBMISSION`.
-
-For generic error categories and retry rules, see [ops.md](ops.md).
+`invalidation` (a legacy top-level free-text field) is no longer accepted —
+the server returns 400 `invalidation_rule_deprecated`. Split it into
+`price_invalidation` (executable) and `business_invalidation_notes[]` (stored).
 
 ## See also
 
+- [ops.md](ops.md) — error categories, quota, rate limit.
 - [outcome.md](outcome.md) — reading back the graded result of a submitted record.
 - [query.md](query.md) — cohort evidence to consult before submitting.
 - `ata-workflow` skill — binding with `workflow_ref` for adherence verification.
