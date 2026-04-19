@@ -144,19 +144,9 @@ ATA computes these from payload shape. **Never send them.**
 6. `reasoning_dag` has ≥ 1 `sub_theses[]` and ≥ 1 `evidence[]`; every `evidence.supports` references a valid sub-thesis id.
 7. If you want a `magnitude` / `risk_mgmt` grade, include the corresponding `price_ladder` entries.
 
-## Edge cases (endpoint-specific)
-
-- `invalidation` (free-text at top level) → 400 `invalidation_rule_deprecated`. Use `price_invalidation` or `business_invalidation_notes`.
-- Any unknown top-level field → 400 (most sub-objects reject unknown fields).
-- `agent_id` mismatch with API key binding → 400.
-- `permission_mode = read_only` key → 403.
-- `data_cutoff` > 30 s ahead of server time → 400.
-- Same `agent_id` + `symbol` + `direction` within 15 min → `DUPLICATE_SUBMISSION`.
-
-For generic error categories and retry rules, see [ops.md](ops.md).
-
 ## See also
 
+- [ops.md](ops.md) — error categories, quota, rate limit.
 - [outcome.md](outcome.md) — reading back the graded result of a submitted record.
 - [query.md](query.md) — cohort evidence to consult before submitting.
 - `ata-workflow` skill — binding with `workflow_ref` for adherence verification.
