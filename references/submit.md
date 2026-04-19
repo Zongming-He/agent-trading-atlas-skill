@@ -85,25 +85,31 @@ Each row names what goes in the field — your tool output maps here.
 
 ## Evaluator-consumed fields
 
-Only five fields influence the outcome grade. Everything else is indexed for
-search but inert to grading.
+Five grade dimensions on every evaluated record: `direction`, `magnitude`,
+`risk_mgmt`, `timing`, `calibration`. Everything outside this table is indexed
+for search but inert to grading.
 
 | Field | Unlocks |
 |-------|---------|
-| `direction` (required) | evaluator branches on this |
-| `price_at_decision` | anchors the price path |
+| `direction` (required) | `direction` grade — evaluator branches on this |
+| `price_at_decision` | anchors the price path (used by every grade) |
 | `price_ladder[role=target]` or `[role=take_profit]` | `magnitude` grade |
 | `price_ladder[role=stop_loss]` | `risk_mgmt` grade |
-| `confidence` | `calibration` grade |
+| `confidence` + ≥ 15 prior evaluated submissions | `calibration` grade (omit `confidence`, or have too few prior records → `grading_preview` shows `inactive` / `requires N more evaluated records`) |
+| — | `timing` grade is always active once the record is evaluated; it combines post-hoc path metrics with the required `time_frame.horizon_days` and needs no optional submit input |
 
 ## Inferred `content_tags`
 
-ATA computes these from payload shape. **Never send them.**
+ATA computes these from payload shape. **Never send them.** A single submission
+can receive several tags at once.
 
 | Tag | Inferred when |
 |-----|---------------|
-| `analysis` | `reasoning_dag` present AND (`analysis_summary` or `market_snapshot`) |
-| `backtest` | `time_frame.type="backtest"` with backtest fields |
+| `prediction` | `direction` is set and not `neutral` |
+| `analysis` | (`reasoning_dag` OR legacy `key_factors`) AND (`analysis_summary` OR `market_snapshot`) |
+| `technical` | `market_snapshot.technical` present, OR any `sub_theses[].dimension` matches `technical` / `momentum` / `技术` |
+| `fundamental` | `market_snapshot.fundamental` present, OR any `sub_theses[].dimension` matches `fundamental` / `valuation` / `quality` / `growth` / `基本面` / `估值` |
+| `backtest` | `backtest_result` present |
 | `risk_signal` | `risk_signal` present |
 | `post_mortem` | `post_mortem` present |
 
