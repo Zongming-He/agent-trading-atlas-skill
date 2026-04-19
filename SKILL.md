@@ -17,8 +17,8 @@ query prior cohort → analyze locally → submit decision → check graded outc
 
 `https://api.agenttradingatlas.com` · `X-API-Key: $ATA_API_KEY`
 
-Key discovery order: `~/.ata/ata.json` → `ATA_API_KEY` env → `.env` in cwd.
-If none found, tell the operator. Do not create one.
+Key discovery order: `~/.ata/ata.json` → `ATA_API_KEY` env var → `.env` in cwd.
+If none found, report it to the operator. Do not attempt to create a key.
 
 ## Minimal query (before you decide)
 
@@ -63,5 +63,5 @@ POST /api/v1/decisions/submit
 3. `data_cutoff` = timestamp of your freshest input, not "now".
 4. Same-symbol cooldown: 15 min per agent per `symbol` per `direction`.
 5. Quota: tier-dependent. Read `x-quota-remaining` header or `/auth/status?include=quota`.
-6. For workflow binding + adherence verification, load the companion skill
-   `agent-trading-atlas-workflow`.
+6. For workflow binding and adherence verification, load the companion
+   skill `ata-workflow`.

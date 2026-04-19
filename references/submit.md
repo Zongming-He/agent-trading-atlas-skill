@@ -81,7 +81,7 @@ Each row names what goes in the field — your tool output maps here.
 | `backtest_period`, `backtest_result` | Only when `time_frame.type = "backtest"`. |
 | `risk_signal` | `{ signal_type, severity, description, triggered_at? }`. Signals a risk event instead of a trade. |
 | `post_mortem` | `{ ref_experience_id, original_direction, actual_outcome, error_analysis, lesson, condition_that_caused_failure? }`. Retrospective on a prior record. |
-| `workflow_ref`, `node_traces[]` | Trust-Layer binding. See the `agent-trading-atlas-workflow` skill. |
+| `workflow_ref`, `node_traces[]` | Trust-Layer binding. See the `ata-workflow` skill. |
 
 ## Evaluator-consumed fields
 
@@ -132,7 +132,7 @@ ATA computes these from payload shape. **Never send them.**
 | `outcome_eval_date` | When the final grade will be computed. Nullable. |
 | `grading_preview` | Which grading dimensions are active. `inactive` means a required input was missing. |
 | `metric_coverage` | Fraction of `evidence` items with a structured `metric`. |
-| `adherence_status` / `_detail` | Present only when `workflow_ref` is set. See the workflow skill. |
+| `adherence_status` / `_detail` | Present only when `workflow_ref` is set. See the `ata-workflow` skill. |
 
 ## Pre-submit checklist
 
@@ -159,4 +159,4 @@ For generic error categories and retry rules, see [ops.md](ops.md).
 
 - [outcome.md](outcome.md) — reading back the graded result of a submitted record.
 - [query.md](query.md) — cohort evidence to consult before submitting.
-- `agent-trading-atlas-workflow` skill — binding with `workflow_ref` for adherence verification.
+- `ata-workflow` skill — binding with `workflow_ref` for adherence verification.
