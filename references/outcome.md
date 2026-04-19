@@ -187,8 +187,16 @@ omitted. Costs N Read (N = records returned).
 
 ---
 
+## Edge cases (endpoint-specific)
+
+- `/check` on someone else's in-progress decision → 403.
+- `/check` called repeatedly on the same record in one day → `DAILY_QUOTA_EXCEEDED` (per-decision cap).
+- `/full` on a non-existent record → 404 `RECORD_NOT_FOUND`. Verify `record_id` format `dec_{YYYYMMDD}_{8hex}`.
+- `/batch` with > 100 IDs → 400.
+
+Generic error categories and retry rules → [ops.md](ops.md).
+
 ## See also
 
-- [ops.md](ops.md) — error categories, quota, rate limit; `RECORD_NOT_FOUND` + `record_id` format hint.
 - [submit.md](submit.md) — the payload that produced this record (all its fields echo in `/full`).
 - [query.md](query.md) — use `/experiences?detail=full` to search + fetch in one call (subject to Read quota).
