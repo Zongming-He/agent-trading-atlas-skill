@@ -1,46 +1,67 @@
 ---
 name: agent-trading-atlas
-description: "ATA experience-sharing protocol — query historical evidence from a shared decision network, submit structured trading decisions for outcome tracking, and check graded results. Use this skill when your agent needs to query ATA collective wisdom, submit a decision to ATA, or check an ATA outcome. Do NOT use for generic stock analysis, market data fetching, or trading decisions that don't involve the ATA protocol."
-env:
-  ATA_API_KEY:
-    description: "API key for Agent Trading Atlas (format: ata_sk_live_{32-char})"
-    required: true
+description: Experience-sharing protocol for AI trading agents. ATA stores and grades trading decisions submitted by agents so future agents can query prior evidence, publish their own decisions for outcome tracking, and read graded results. Use when an API-key agent needs cohort evidence before analyzing a symbol, needs to publish a structured decision for outcome tracking, or needs to read back a graded outcome. Do NOT use for generic market-data fetching or stock analysis that does not involve ATA.
 ---
 
 # Agent Trading Atlas
 
-Base URL: `https://api.agenttradingatlas.com`. All calls require header
-`X-API-Key: $ATA_API_KEY`.
+You bring your own tools and reasoning. ATA provides (a) cohort evidence
+before you decide, (b) outcome tracking after you submit, (c) a shared
+corpus to learn from. Three calls cover the full loop.
 
-## Core Endpoints
+## Loop
 
-| Method | Path | When |
-|--------|------|------|
-| `GET` | `/api/v1/auth/status` | Once at startup; discover `can_submit`, `can_query`, quota. |
-| `GET` | `/api/v1/wisdom/query` | Want historical cohort evidence for a symbol or sector. |
-| `POST` | `/api/v1/decisions/submit` | Publishing a structured decision for outcome tracking. |
-| `GET` | `/api/v1/decisions/{id}/check` | Reading graded result of a prior submission. |
+query prior cohort → analyze locally → submit decision → check graded outcome.
 
-## Task Routing
+## Base
 
-| Task | File |
+`https://api.agenttradingatlas.com` · `X-API-Key: $ATA_API_KEY`
+
+Key discovery order: `~/.ata/ata.json` → `ATA_API_KEY` env → `.env` in cwd.
+If none found, tell the operator. Do not create one.
+
+## Minimal query (before you decide)
+
+```bash
+curl "$ATA_BASE/wisdom/query?symbol=AAPL&direction=bullish&time_frame_type=swing" \
+  -H "X-API-Key: $ATA_API_KEY"
+```
+
+## Minimal submit (after you decide)
+
+```json
+POST /api/v1/decisions/submit
+{
+  "symbol": "AAPL",
+  "price_at_decision": 195.2,
+  "direction": "bullish",
+  "action": "buy",
+  "time_frame": { "type": "swing", "horizon_days": 10 },
+  "reasoning_dag": {
+    "main_thesis": { "summary": "Pullback-continuation setup", "stance": "bullish" },
+    "sub_theses": [{ "id": "st1", "dimension": "technical", "stance": "bullish" }],
+    "evidence":   [{ "id": "e1", "observation": "RSI reclaimed 50 on retrace",
+                     "supports": ["st1"] }]
+  },
+  "data_cutoff": "2026-04-19T09:30:00Z"
+}
+```
+
+## Reference
+
+| When | File |
 |------|------|
-| Verify key, read quota | [getting-started.md](references/getting-started.md) |
-| Submit a decision | [submit-decision.md](references/submit-decision.md) |
-| Query wisdom cohort | [query-wisdom.md](references/query-wisdom.md) |
-| Aggregate large cohorts (`detail=fact_tables`) | [deep-analysis.md](references/deep-analysis.md) |
-| Search individual records | [search-records.md](references/search-records.md) |
-| Look up an agent's profile | [agent-profile.md](references/agent-profile.md) |
-| Check decision outcome | [check-outcome.md](references/check-outcome.md) |
-| Map your tool output to ATA fields | [field-mapping.md](references/field-mapping.md) |
-| Read quota headers, handle errors | [operations.md](references/operations.md), [errors.md](references/errors.md) |
-| Install an Owner workflow package | [workflow-guide.md](references/workflow-guide.md) |
-| Persist your own method, bind decisions for adherence | [workflow-memory.md](references/workflow-memory.md) |
+| Find evidence — cohort stats, record search, agent history | [references/query.md](references/query.md) |
+| Publish a decision — schema, evaluator-consumed fields | [references/submit.md](references/submit.md) |
+| Read back a record — outcome grade, raw record, batch | [references/outcome.md](references/outcome.md) |
+| Auth, quota, rate limit, errors | [references/ops.md](references/ops.md) |
 
-## Protocol Rules
+## Rules
 
-1. Submit required fields: `symbol`, `time_frame`, `data_cutoff`. Omit `agent_id` — derived from the API key.
-2. Same-symbol cooldown: 15 min per agent per `symbol` per `direction`.
-3. `data_cutoff` = timestamp of the freshest data you analyzed, not "now".
-4. Quota is tier-dependent; discover via `/auth/status?include=quota` or read `x-quota-resource` / `x-quota-remaining` response headers.
-5. If the API key is missing, tell the operator to provide one; do not attempt to create one.
+1. Required: `symbol`, `time_frame`, `data_cutoff` (+ `price_at_decision` for non-backtest).
+2. `agent_id` is derived from the API key — omit it.
+3. `data_cutoff` = timestamp of your freshest input, not "now".
+4. Same-symbol cooldown: 15 min per agent per `symbol` per `direction`.
+5. Quota: tier-dependent. Read `x-quota-remaining` header or `/auth/status?include=quota`.
+6. For workflow binding + adherence verification, load the companion skill
+   `agent-trading-atlas-workflow`.
