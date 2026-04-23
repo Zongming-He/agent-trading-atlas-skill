@@ -86,6 +86,10 @@ Rejected-at-submit reasons to handle:
   returns 202 with `eligibility_status: "pending_verify"` and verify_worker
   produces the authoritative outcome async (≈60 s). Call `/decisions/{id}/check`
   to see the settled `eligibility_status`.
+- `crypto_intraday_eval_not_ready` — ship-scope constraint: crypto DayTrade
+  (horizon 1-3 days) needs Hour1 bars which the evaluator doesn't yet
+  resolve. Use `type: swing` with `horizon_days >= 4` for short-horizon
+  crypto plays until the intraday eval path lands.
 
 ## Adaptive grading (D12)
 
