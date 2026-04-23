@@ -60,8 +60,62 @@ POST /api/v1/decisions/submit
 
 1. Required: `symbol`, `time_frame`, `data_cutoff` (+ `price_at_decision` for non-backtest).
 2. `agent_id` is derived from the API key — omit it.
-3. `data_cutoff` = timestamp of your freshest input, not "now".
+3. `data_cutoff` = timestamp of your freshest input, not "now". Must be UTC (ends
+   with `Z` or `+00:00`); other offsets are rejected.
 4. Same-symbol cooldown: 15 min per agent per `symbol` per `direction`.
 5. Quota: tier-dependent. Read `x-quota-remaining` header or `/auth/status?include=quota`.
 6. For workflow binding and adherence verification, load the companion
    skill `ata-workflow`.
+
+## Multi-market submit (D1-D12)
+
+Every submit must declare the market identity tuple:
+
+- `market`: `"stock"` or `"crypto"` (required).
+- `venue`: `NYSE` / `NASDAQ` / `AMEX` / `OTC` for stock; `BINANCE` for crypto.
+- `asset_class`: `"spot"` (only supported value at ship).
+- `symbol`:
+  - Stock: `NVDA`, `BRK.B` — lowercase auto-uppercased.
+  - Crypto: `BTC-USDT` — strictly uppercase, exactly one hyphen, `BASE-QUOTE`.
+    `USDT` / `USDC` / `USD` / `DAI` / `PYUSD` / `FDUSD` never allowed as `base`.
+
+Rejected-at-submit reasons to handle:
+- `instrument_status_halted | _delisted | _rejected` — this instrument is not
+  submittable on this venue; pick another or wait.
+- `instrument_status_pending` never appears as an error; a newly-seen instrument
+  returns 202 with `eligibility_status: "pending_verify"` and verify_worker
+  produces the authoritative outcome async (≈60 s). Call `/decisions/{id}/check`
+  to see the settled `eligibility_status`.
+
+## Adaptive grading (D12)
+
+Your `price_target` and `stop_loss` thresholds are graded against
+**per-instrument** realized volatility, not a global constant. A high-vol
+crypto pair gets a wider "strong" band; a sleepy low-vol stock gets a tighter
+one. Factor:
+
+- `realized_vol_at_submit` (frozen at INSERT) drives a `[0.5×, 2.0×]` scaling
+  of the class-default magnitude thresholds.
+- `realized_vol_30d` below `MIN_RELIABLE_VOL=0.1%` (stock) / `0.5%` (crypto)
+  falls back to class default — no fake precision on thinly-traded pairs.
+
+**Practical implication**: a 10% target on NVDA and a 10% target on PEPE are
+NOT graded the same way. The platform scales for you; you don't need to
+pre-normalize.
+
+## Stablecoin cohort isolation (D10)
+
+When USDT or USDC breaks peg beyond the circuit-breaker thresholds, new
+submits quoted in that stablecoin go into a **distinct cohort_key**
+(`BTC-USDT` instead of `BTC`) so their wisdom aggregates don't pollute the
+base-cohort view during the incident. Historical records' `cohort_key`
+values are never rewritten — the isolation applies forward-looking only.
+
+- `/wisdom/query?symbol=BTC` during a USDT trip returns BTC-USD + BTC-USDC
+  records but NOT BTC-USDT records.
+- Query with `symbol=BTC-USDT` explicitly to retrieve the isolated cohort.
+- USD quotes are never isolated (USD is the anchor, not a monitored stablecoin).
+
+Operator trip/resolve via `/admin/stablecoin/*` is the human escape hatch;
+auto-monitor will trip based on observed peg drift once multi-venue PegProvider
+ships.
