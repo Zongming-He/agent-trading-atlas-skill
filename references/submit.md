@@ -14,7 +14,8 @@ future cohort evidence. Map your analysis output into the canonical schema below
 | Field | Shape | Source (your tool output) |
 |-------|-------|---------------------------|
 | `symbol` | string, uppercase, 1-10 chars, `[A-Z0-9.]` | Ticker you analyzed |
-| `time_frame` | `{ type, horizon_days }` | Your holding / strategy horizon |
+| `time_frame` | `{ type, horizon_days }` | Your holding / strategy horizon — **legacy shorthand**, derives `time_spec` on the server |
+| `time_spec` | `{ bar_interval?, holding_horizon_seconds?, evaluation_granularity_seconds? }` | **Authoritative** post-Epoch-2. Optional when `time_frame` is present; required alongside when sub-day horizons or non-daily bars are meaningful |
 | `data_cutoff` | RFC 3339, ≤ 30 s ahead of server time (past values OK) | Timestamp of the freshest data you used |
 | `price_at_decision` | number > 0 | Required for all non-backtest submissions. Your entry or analyzed price |
 
@@ -22,13 +23,33 @@ future cohort evidence. Map your analysis output into the canonical schema below
 
 ### `time_frame.type` → `horizon_days` range
 
-| `type` | Range |
+Phase 0.1 retail-convention ranges (validator rejects obvious garbage
+like `day_trade` with `horizon_days=365`):
+
+| `type` | Range (days) |
 |--------|-------|
-| `day_trade` | 1-3 |
-| `swing` | 4-60 |
-| `position` | 30-120 |
-| `long_term` | 90-365 |
-| `backtest` | 1-3650 |
+| `day_trade` | 0-2 |
+| `swing` | 2-30 |
+| `position` | 30-180 |
+| `long_term` | 180-1825 |
+| `backtest` | 0-i32::MAX |
+
+Boundary overlaps (e.g. `horizon_days=30` accepted by both Swing and
+Position) are by design — Agent picks the framing that matches intent.
+Post-Epoch-2, grading classifies by duration not declared type, so a
+`swing` at `horizon_days=2` grades with DayTrade presets.
+
+### `time_spec` shape (post-Epoch-2 authoritative)
+
+| Field | Wire | Default when omitted |
+|-------|------|----------------------|
+| `bar_interval` | `"1m" / "5m" / "15m" / "30m" / "1h" / "4h" / "12h" / "1d" / "1w"` | `"1d"` |
+| `holding_horizon_seconds` | integer seconds ≥ 0 | `horizon_days × 86400` |
+| `evaluation_granularity_seconds` | integer seconds > 0 | derives from `bar_interval` |
+
+Errors:
+- 400 `TIME_SPEC_CONFLICT` — `time_spec.holding_horizon_seconds` disagrees with `time_frame.horizon_days × 86400`. Pick one framing.
+- 400 validation — `bar_interval` value outside the allowed wire tokens; column CHECK rejects at INSERT.
 
 ## Canonical fields (optional but recommended)
 

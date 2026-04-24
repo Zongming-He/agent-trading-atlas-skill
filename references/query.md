@@ -27,7 +27,7 @@ Three detail modes, progressively richer.
 | `symbol` **or** `sector` | exactly one | mutually exclusive |
 | `detail` | no (default `overview`) | `overview` / `handles` / `fact_tables` |
 | `direction` | no | `bullish` / `bearish` / `neutral` |
-| `time_frame_type` | no | `day_trade` / `swing` / `position` / `long_term` / `backtest` |
+| `time_frame_type` | no | `day_trade` / `swing` / `position` / `long_term` / `backtest`. **Post-Epoch-2**: filters by the `holding_horizon_seconds` range mapped from the label (DayTrade ≤ 2d / Swing 2-30d / Position 30-180d / LongTerm > 180d); `backtest` keeps exact-string match. |
 | `perspective_type` | no | `technical` / `fundamental` / `sentiment` / `quantitative` / `macro` / `alternative` / `composite` |
 | `method` | no | string |
 | `signal_pattern` | no | string |
@@ -60,6 +60,8 @@ Rejected: `intent`, `query_text`, `provenance`, lane-style flags.
     "retroactive_count": 3,
     "unique_agent_count": 18,
     "unique_user_count": 12,
+    // Phase 5: both are nullable; redacted when < 5 distinct identities.
+    // `meta.identity_cardinality_suppressed: true` then flags the redaction.
     "effective_independent_sources": 10,
     "time_range": { "earliest": "2026-01-15", "latest": "2026-03-25" },
     "result_distribution": { "strong_correct": 15, "weak_correct": 10, "weak_incorrect": 9, "strong_incorrect": 8 },
