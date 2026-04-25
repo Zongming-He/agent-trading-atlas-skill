@@ -58,6 +58,7 @@ Rejected: `intent`, `query_text`, `provenance`, lane-style flags.
   "evidence_overview": {
     "realtime_evaluated_count": 42,
     "retroactive_count": 3,
+    "deferred_count": 2,
     "unique_agent_count": 18,
     "unique_user_count": 12,
     // Phase 5: both are nullable; redacted when < 5 distinct identities.
@@ -65,7 +66,7 @@ Rejected: `intent`, `query_text`, `provenance`, lane-style flags.
     "effective_independent_sources": 10,
     "time_range": { "earliest": "2026-01-15", "latest": "2026-03-25" },
     "result_distribution": { "strong_correct": 15, "weak_correct": 10, "weak_incorrect": 9, "strong_incorrect": 8 },
-    "return_statistics": { "sample_size": 42, "median_sim_return": 0.031, "median_mfe": 0.058, "median_mae": -0.022, "median_capture_efficiency": 0.53 },
+    "return_overview": { "sample_size": 42 },
     "current_regime": { "vol_percentile": 0.7, "trend_tstat": 1.2 }
   },
   "meta": { "data_freshness": "fresh", "knowledge_version": "evidence", "total_decisions_for_symbol": 55 }
@@ -73,6 +74,7 @@ Rejected: `intent`, `query_text`, `provenance`, lane-style flags.
 ```
 
 - `result_distribution` is `null` when the evaluated sample is too small.
+- `deferred_count` tells you how many matching records are accepted but still waiting for a provider/evaluator path.
 - `effective_independent_sources` is inverse-HHI — higher = more diversified.
 - `current_regime` describes the **current** market, not the cohort window.
 
@@ -87,29 +89,26 @@ Adds `record_handles[]`:
   "effective_decision_date": "2026-02-15", "horizon_days": 14,
   "result_bucket": "strong_incorrect",
   "key_factor_preview": [{ "factor": "rsi_overbought", "normalized": "rsi_overbought" }],
-  "source_owner_alias": "owner_1",
   "created_regime": { "vol_percentile": 0.3, "trend_tstat": 2.1 }
 }
 ```
 
 Use when the cohort is small enough to scan individually.
-`source_owner_alias` is query-scoped — not stable across calls.
 
 ### `detail=fact_tables` — grouped aggregations
 
-Most token-efficient for large cohorts. Server returns seven grouped tables,
-each row containing outcome bucket counts (`strong_correct`, `weak_correct`,
-`weak_incorrect`, `strong_incorrect`, `total`). Only realtime evaluated
-submissions are included.
+Most token-efficient for large cohorts. Server returns navigation tables with
+`total` + `evaluated_count` only, plus the top-level `result_distribution`.
+Per-dimension outcome matrices are intentionally omitted.
 
 | Table | Groups by | Notes |
 |-------|-----------|-------|
-| `factor_outcome_counts` | normalized key-factor name | Min 3 occurrences, top 20 by total |
-| `temporal_outcome_counts` | decision age buckets | `0-14d`, `15-60d`, `61-180d`, `180d+` |
-| `perspective_outcome_counts` | `perspective_type` | Ordered by total desc |
-| `regime_outcome_counts` | `market_regime` | Omitted if unavailable |
-| `sub_thesis_dimension_counts` | `normalized_dimension × stance` | Min 3 occurrences, top 30 |
-| `evidence_metric_outcome_counts` | evidence `metric.name` | Min 3 occurrences, top 50 |
+| `factor_total_counts` | normalized key-factor name | Min 3 occurrences, top 20 by total |
+| `temporal_total_counts` | decision age buckets | `0-14d`, `15-60d`, `61-180d`, `180d+` |
+| `perspective_total_counts` | `perspective_type` | Ordered by total desc |
+| `regime_total_counts` | `market_regime` | Omitted if unavailable |
+| `sub_thesis_dimension_total_counts` | `normalized_dimension × stance` | Min 3 occurrences, top 30 |
+| `evidence_metric_total_counts` | evidence `metric.name` | Min 3 occurrences, top 50 |
 | `result_distribution` | overall cohort | Same as `detail=overview`, inlined here |
 
 Progressive strategy: `overview` to check sample size → `fact_tables` for

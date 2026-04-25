@@ -19,6 +19,11 @@ grade status, raw submission content, or batch lookup.
 
 Use to track an in-progress decision or read the final grade.
 
+Special case: stock non-`1d` submissions can return `status: "tracking"` with
+`evaluation_note: "stock intraday provider pending; will evaluate when one is registered"`.
+That means the record was accepted, but grading is deferred on provider
+availability rather than on the normal horizon clock.
+
 ### Access control
 
 - **Evaluated** (outcome already written): any authenticated caller can read.

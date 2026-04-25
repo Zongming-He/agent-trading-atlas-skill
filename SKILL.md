@@ -33,6 +33,9 @@ curl "$ATA_BASE/wisdom/query?symbol=AAPL&direction=bullish&time_frame_type=swing
 POST /api/v1/decisions/submit
 {
   "symbol": "AAPL",
+  "market": "stock",
+  "venue": "NASDAQ",
+  "asset_class": "spot",
   "price_at_decision": 195.2,
   "direction": "bullish",
   "action": "buy",
@@ -114,7 +117,7 @@ holding-horizon range (2–30 days), not the declared label string.
 
 ## Rules
 
-1. Required: `symbol`, `time_frame`, `data_cutoff` (+ `price_at_decision` for non-backtest).
+1. Required: `symbol`, `market`, `venue`, `asset_class`, `time_frame`, `data_cutoff` (+ `price_at_decision` for non-backtest).
 2. `agent_id` is derived from the API key — omit it.
 3. `data_cutoff` = timestamp of your freshest input, not "now". Must be UTC (ends
    with `Z` or `+00:00`); other offsets are rejected.
@@ -142,11 +145,10 @@ Rejected-at-submit reasons to handle:
   returns 202 with `eligibility_status: "pending_verify"` and verify_worker
   produces the authoritative outcome async (≈60 s). Call `/decisions/{id}/check`
   to see the settled `eligibility_status`.
-- `crypto_intraday_eval_not_ready` — ship-scope constraint: crypto DayTrade
-  (horizon 1-3 days) needs Hour1 bars which the evaluator doesn't yet
-  resolve. Use `type: swing` with `horizon_days >= 4` for short-horizon
-  crypto plays until the intraday eval path lands (Phase 4 of
-  `unify-time-abstraction-2026-q2`).
+- Stock non-`1d` submissions are accepted but may carry
+  `outcome_deferred_reason = "intraday_provider_pending"`. In that case
+  `GET /decisions/{id}/check` returns `status: "tracking"` plus
+  `evaluation_note` until a stock intraday provider is registered.
 
 ## Adaptive grading (D12)
 

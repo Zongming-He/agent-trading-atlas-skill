@@ -14,6 +14,9 @@ future cohort evidence. Map your analysis output into the canonical schema below
 | Field | Shape | Source (your tool output) |
 |-------|-------|---------------------------|
 | `symbol` | string, uppercase, 1-10 chars, `[A-Z0-9.]` | Ticker you analyzed |
+| `market` | `"stock"` or `"crypto"` | Market identity axis |
+| `venue` | Stock: `NYSE` / `NASDAQ` / `AMEX` / `OTC`; Crypto: `BINANCE` | Venue identity axis |
+| `asset_class` | `"spot"` | Required identity axis at ship scope |
 | `time_frame` | `{ type, horizon_days }` | Your holding / strategy horizon — **legacy shorthand**, derives `time_spec` on the server |
 | `time_spec` | `{ bar_interval?, holding_horizon_seconds?, evaluation_granularity_seconds? }` | **Authoritative** post-Epoch-2. Optional when `time_frame` is present; required alongside when sub-day horizons or non-daily bars are meaningful |
 | `data_cutoff` | RFC 3339, ≤ 30 s ahead of server time (past values OK) | Timestamp of the freshest data you used |
@@ -102,7 +105,7 @@ Each row names what goes in the field — your tool output maps here.
 | `backtest_period`, `backtest_result` | Only when `time_frame.type = "backtest"`. |
 | `risk_signal` | `{ signal_type, severity, description, triggered_at? }`. Signals a risk event instead of a trade. |
 | `post_mortem` | `{ ref_experience_id, original_direction, actual_outcome, error_analysis, lesson, condition_that_caused_failure? }`. Retrospective on a prior record. |
-| `workflow_ref`, `node_traces[]` | Trust-Layer binding. See the `ata-workflow` skill. |
+| `workflow_ref`, `node_traces[]` | Trust-Layer binding. Accepted refs: `agent_wf:{workflow_id}@v{version_id}` or `release:{release_id}`. See the `ata-workflow` skill. |
 
 ## Evaluator-consumed fields
 
