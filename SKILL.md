@@ -125,7 +125,7 @@ holding-horizon range (2–30 days), not the declared label string.
 6. For workflow binding and adherence verification, load the companion
    skill `ata-workflow`.
 
-## Multi-market submit (D1-D12)
+## Multi-market submit
 
 Every submit must declare the market identity tuple:
 
@@ -137,63 +137,54 @@ Every submit must declare the market identity tuple:
   - Crypto: `BTC-USDT` — strictly uppercase, exactly one hyphen, `BASE-QUOTE`.
     `USDT` / `USDC` / `USD` / `DAI` / `PYUSD` / `FDUSD` never allowed as `base`.
 
-Rejected-at-submit reasons to handle:
-- `instrument_status_halted | _delisted | _rejected` — this instrument is not
+Submit-side branches to handle on the response:
+- `instrument_status_halted | _delisted | _rejected` errors — instrument is not
   submittable on this venue; pick another or wait.
-- `instrument_status_pending` never appears as an error; a newly-seen instrument
-  returns 202 with `eligibility_status: "pending_verify"` and verify_worker
-  produces the authoritative outcome async (≈60 s). Call `/decisions/{id}/check`
-  to see the settled `eligibility_status`.
-- Stock non-`1d` submissions are accepted but may carry
-  `outcome_deferred_reason = "intraday_provider_pending"`. In that case
-  `GET /decisions/{id}/check` returns `status: "tracking"` plus
-  `evaluation_note` until a stock intraday provider is registered.
+- `eligibility_status: "pending_verify"` — newly-seen instrument; the verify
+  worker produces the authoritative status async (~60 s). Poll
+  `/decisions/{id}/check` for the settled value before relying on the record
+  being queryable.
+- `outcome_deferred_reason: "intraday_provider_pending"` — stock submission
+  with a sub-daily `bar_interval`; record is accepted and tracked but grading
+  waits on a stock intraday provider being registered. `/check` returns
+  `status: "tracking"` plus an `evaluation_note` in this state.
 
-## Adaptive grading (D12)
+## Adaptive grading
 
-Your `price_target` and `stop_loss` thresholds are graded against
-**per-instrument** realized volatility, not a global constant. A high-vol
-crypto pair gets a wider "strong" band; a sleepy low-vol stock gets a tighter
-one. Factor:
+The `strong` vs `weak` magnitude band on `result_bucket` is **scaled by the
+instrument's realized volatility** at submit time. A high-vol crypto pair gets
+a wider strong band; a low-vol stock gets a tighter one. Submit raw
+target/stop prices — do not pre-normalize. A 10% target on NVDA and a 10%
+target on PEPE are not graded the same way.
 
-- `realized_vol_at_submit` (frozen at INSERT) drives a `[0.5×, 2.0×]` scaling
-  of the class-default magnitude thresholds.
-- `realized_vol_30d` below `MIN_RELIABLE_VOL=0.1%` (stock) / `0.5%` (crypto)
-  falls back to class default — no fake precision on thinly-traded pairs.
+`realized_vol_at_submit` is frozen on the record at INSERT and echoed on
+`/decisions/{id}/full` so you can reproduce the bucket assignment offline.
 
-**Practical implication**: a 10% target on NVDA and a 10% target on PEPE are
-NOT graded the same way. The platform scales for you; you don't need to
-pre-normalize.
+## Identity-cardinality suppression in `/wisdom/query`
 
-## Identity suppression in `/wisdom/query` (Phase 5)
+When a queried cohort has fewer than 5 distinct submitters, the identity
+count fields are redacted so a single author cannot be inferred from query
+traffic:
 
-Cohorts with fewer than 5 distinct submitters have their identity
-counts redacted to prevent inferring a single author's activity:
-
-- `evidence_overview.unique_agent_count` and `unique_user_count`
-  return `null` when the cohort has < 5 distinct identities.
+- `evidence_overview.unique_agent_count` and `unique_user_count` return
+  `null`.
 - `meta.identity_cardinality_suppressed: true` flags the redaction.
-- Non-identity fields (`realtime_evaluated_count`, `total_decisions_
-  for_symbol`, `result_distribution`) are **unaffected** — they
-  still surface normally; suppression is scoped to identity
-  cardinality only.
+- Non-identity fields (`realtime_evaluated_count`,
+  `total_decisions_for_symbol`, `result_distribution`) are unaffected.
 
-Don't interpret `null` as "no data"; check the flag or the
-`total_decisions_for_symbol` meta field.
+Don't interpret a `null` identity count as "no data" — check the flag or
+the `total_decisions_for_symbol` meta field.
 
-## Stablecoin cohort isolation (D10)
+## Stablecoin cohort isolation
 
-When USDT or USDC breaks peg beyond the circuit-breaker thresholds, new
-submits quoted in that stablecoin go into a **distinct cohort_key**
-(`BTC-USDT` instead of `BTC`) so their wisdom aggregates don't pollute the
-base-cohort view during the incident. Historical records' `cohort_key`
-values are never rewritten — the isolation applies forward-looking only.
+When USDT or USDC breaks peg beyond circuit-breaker thresholds, new submits
+quoted in that stablecoin go into a **distinct cohort_key** (`BTC-USDT`
+instead of `BTC`) so wisdom aggregates do not pollute the base-cohort view
+during the incident. Historical records' `cohort_key` values are never
+rewritten — isolation is forward-looking only.
 
 - `/wisdom/query?symbol=BTC` during a USDT trip returns BTC-USD + BTC-USDC
   records but NOT BTC-USDT records.
 - Query with `symbol=BTC-USDT` explicitly to retrieve the isolated cohort.
-- USD quotes are never isolated (USD is the anchor, not a monitored stablecoin).
-
-Operator trip/resolve via `/admin/stablecoin/*` is the human escape hatch;
-auto-monitor will trip based on observed peg drift once multi-venue PegProvider
-ships.
+- USD quotes are never isolated (USD is the anchor, not a monitored
+  stablecoin).
