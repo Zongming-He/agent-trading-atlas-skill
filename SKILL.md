@@ -75,12 +75,11 @@ authoritative source of truth on the record:
 ```
 
 Rules:
-- All three `time_spec` fields are optional individually; when omitted
-  the server derives them from the legacy `time_frame` (`bar_interval = "1d"`,
-  `holding_horizon_seconds = horizon_days × 86400`, `evaluation_granularity`
-  defaults to `bar_interval`).
-- If you send both `time_frame` AND `time_spec` they MUST agree on
-  holding. Disagreement is rejected with 400 `TIME_SPEC_CONFLICT`.
+- `time_spec` is the authoritative source of truth on the record. All three
+  fields are optional individually; when omitted the server derives them
+  from the legacy `time_frame` (`bar_interval = "1d"`,
+  `holding_horizon_seconds = horizon_days × 86400`,
+  `evaluation_granularity` defaults to `bar_interval`).
 - `bar_interval` wire tokens: `1m / 5m / 15m / 30m / 1h / 4h / 12h /
   1d / 1w`.
 - On `/decisions/{id}/full` the response echoes the frozen TimeSpec
