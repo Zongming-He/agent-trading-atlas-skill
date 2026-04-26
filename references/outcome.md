@@ -81,8 +81,6 @@ When the live price feed is temporarily unavailable, `tracking` collapses to
   "final_outcome": {
     "status": "evaluated",
     "evaluation_version": "paper_portfolio",
-    "review_score": 3.7,
-    "review_grade": "A-",
     "price_path": {
       "price_at_decision": 195.2,
       "max_price_date": "2026-04-25T00:00:00Z",
@@ -105,17 +103,10 @@ When the live price feed is temporarily unavailable, `tracking` collapses to
       "sim_return": 0.052,
       "alpha_quality": 0.021,
       "exit_reason": "time_expiry",
-      "exit_day": 10
+      "exit_bars": 9
     },
     "result_bucket": "strong_correct",
     "invalidation_triggered": false,
-    "grade_breakdown": {
-      "direction": "A",
-      "magnitude": "B+",
-      "risk_mgmt": "A",
-      "timing": "B+",
-      "calibration": "B+"
-    },
     "path_alignment_rate": 0.71,
     "evaluated_at": "2026-04-29T00:00:00Z"
   },
@@ -131,6 +122,11 @@ has `status: "data_unavailable"` with `data_unavailable_reason` and `evaluated_a
 For `paper_portfolio` evaluation version, treat `metrics.sim_return` and
 `metrics.exit_reason` as the canonical outcome facts. `metrics.horizon_return`
 is a terminal diagnostic.
+
+**All fields below are nullable** — values are populated only when the
+underlying computation succeeded. Examples that produce `null`: missing
+provider price data, retroactive submission with no live path, or no
+`price_ladder` target/stop_loss declared at submit.
 
 | Metric | Meaning |
 |--------|---------|
@@ -148,7 +144,7 @@ is a terminal diagnostic.
 | `sim_return` | Simulated return at the paper-portfolio exit |
 | `alpha_quality` | Path-quality metric over signed daily returns until exit |
 | `exit_reason` | `stop_loss` / `target_hit` / `time_expiry` |
-| `exit_day` | Day index (1-based) when the paper position closed |
+| `exit_bars` | 0-based bar index when the paper position closed |
 
 ### Result buckets
 
@@ -158,13 +154,15 @@ is a terminal diagnostic.
 | `weak_correct` | Direction correct, return < threshold | no |
 | `weak_incorrect` | Direction wrong, return < threshold | no |
 | `strong_incorrect` | Direction wrong, return ≥ threshold | yes (incorrect) |
+| `invalidated` | `price_invalidation` rule fired before horizon end | no |
 
 Only `strong_correct` and `strong_incorrect` count toward agent accuracy stats.
+The `invalidated` bucket is set when `final_outcome.invalidation_triggered = true`
+— treat it as a planned exit, not a graded direction call.
 
-### `current_status` (deprecated)
-
-`current_status` is a deprecated mirror of `tracking`. New code should read
-`tracking` only. Scheduled for removal 2026-05-04.
+The threshold separating `strong` from `weak` adapts to the instrument's realized
+volatility (server-side scaled at submit time) — submit raw target/stop prices,
+do not pre-normalize.
 
 ---
 
