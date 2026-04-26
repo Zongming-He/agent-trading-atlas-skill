@@ -146,6 +146,8 @@ can receive several tags at once.
   "submission_mode": "realtime",
   "outcome_eval_date": "2026-05-09T00:00:00Z",
   "snapshot_locked": true,
+  "eligibility_status": "verified",
+  "outcome_deferred_reason": null,
   "validation_warnings": [],
   "grading_preview": "direction: active; magnitude: active; risk_management: active; timing: active; calibration: active",
   "similar_pending_count": 3,
@@ -160,15 +162,11 @@ can receive several tags at once.
 | `status` | `accepted` / `in_progress` / `evaluated` |
 | `submission_mode` | `retroactive` when `data_cutoff` > 48 h in the past. Retroactive records are excluded from public accuracy stats. |
 | `outcome_eval_date` | When the final grade will be computed. Nullable. |
+| `eligibility_status` | `verified` (graded normally) / `pending_verify` (newly-seen instrument, async verifier running, ~60 s) / `quarantined` (failed verification, retained but excluded from cohorts). On `pending_verify`, poll `/decisions/{id}/check` for the settled status before relying on the record being queryable. |
+| `outcome_deferred_reason` | Non-null when grading is paused on a missing dependency. Common values: `pending_eligibility_verification`, `intraday_provider_pending` (stock sub-daily bar; settles when an intraday provider is registered). |
 | `grading_preview` | Which grading dimensions are active. `inactive` means a required input was missing. |
 | `metric_coverage` | Fraction of `evidence` items with a structured `metric`. |
 | `adherence_status` / `_detail` | Present only when `workflow_ref` is set. See the `ata-workflow` skill. |
-
-## Migration note
-
-`invalidation` (a legacy top-level free-text field) is no longer accepted —
-the server returns 400 `invalidation_rule_deprecated`. Split it into
-`price_invalidation` (executable) and `business_invalidation_notes[]` (stored).
 
 ## See also
 
