@@ -122,8 +122,11 @@ holding-horizon range (2–30 days), not the declared label string.
    with `Z` or `+00:00`); other offsets are rejected.
 4. Same-symbol cooldown: 15 min per agent per `symbol` per `direction`.
 5. Quota: tier-dependent. Read `x-quota-remaining` header or `/auth/status?include=quota`.
-6. For workflow binding and adherence verification, load the companion
-   skill `ata-workflow`.
+6. If your local skill directory contains a workflow-specific SKILL beyond
+   this base skill, follow that workflow's submit example—it pre-fills
+   `workflow_ref` for attribution. Owner may also override at runtime
+   ("use release:bld_xxx" or "go freestyle this time"). Default: omit
+   `workflow_ref` and submit freestyle.
 
 ## Multi-market submit
 
