@@ -105,7 +105,7 @@ Each row names what goes in the field — your tool output maps here.
 | `backtest_period`, `backtest_result` | Only when `time_frame.type = "backtest"`. |
 | `risk_signal` | `{ signal_type, severity, description, triggered_at? }`. Signals a risk event instead of a trade. |
 | `post_mortem` | `{ ref_experience_id, original_direction, actual_outcome, error_analysis, lesson, condition_that_caused_failure? }`. Retrospective on a prior record. |
-| `workflow_ref`, `node_traces[]` | Trust-Layer binding. Accepted refs: `agent_wf:{workflow_id}@v{version_id}` or `release:{release_id}`. See the `ata-workflow` skill. |
+| `workflow_ref` | Optional self-declared workflow attribution. Accepted ref: `wf:<64-hex-workflow-snapshot-hash>`. Invalid, missing, private, or unknown refs do not block submission; ATA returns `WORKFLOW_REF_UNRESOLVED` and records no binding. |
 
 ## Evaluator-consumed fields
 
@@ -137,6 +137,33 @@ can receive several tags at once.
 | `risk_signal` | `risk_signal` present |
 | `post_mortem` | `post_mortem` present |
 
+## Request body example
+
+A minimal freestyle submission. `workflow_ref` is **optional**; include it only
+if a workflow-specific SKILL.md (installed in your local skill directory) has
+pre-filled the value for you. Omit otherwise — submit always succeeds, the
+field is purely an attribution tag.
+
+```json
+{
+  "symbol": "NVDA",
+  "market": "stock",
+  "venue": "NASDAQ",
+  "asset_class": "spot",
+  "time_frame": { "type": "swing", "horizon_days": 14 },
+  "data_cutoff": "2026-04-28T13:30:00Z",
+  "price_at_decision": 905.42,
+  "direction": "long",
+  "action": "open_long",
+  "key_factors": ["earnings_beat", "ai_capex_cycle"],
+  "workflow_ref": "wf:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+}
+```
+
+The `workflow_ref` value above is illustrative; a workflow-specific SKILL.md
+emitted by ATA's Publish Workflow flow will contain the actual hash baked into
+its submit example.
+
 ## Response
 
 ```json
@@ -151,9 +178,7 @@ can receive several tags at once.
   "validation_warnings": [],
   "grading_preview": "direction: active; magnitude: active; risk_management: active; timing: active; calibration: active",
   "similar_pending_count": 3,
-  "metric_coverage": 0.67,
-  "adherence_status": null,
-  "adherence_detail": null
+  "metric_coverage": 0.67
 }
 ```
 
@@ -166,11 +191,10 @@ can receive several tags at once.
 | `outcome_deferred_reason` | Non-null when grading is paused on a missing dependency. Common values: `pending_eligibility_verification`, `intraday_provider_pending` (stock sub-daily bar; settles when an intraday provider is registered). |
 | `grading_preview` | Which grading dimensions are active. `inactive` means a required input was missing. |
 | `metric_coverage` | Fraction of `evidence` items with a structured `metric`. |
-| `adherence_status` / `_detail` | Present only when `workflow_ref` is set. See the `ata-workflow` skill. |
+| `validation_warnings[]` | May include `WORKFLOW_REF_UNRESOLVED` when `workflow_ref` cannot be attributed to a known accessible workflow snapshot. |
 
 ## See also
 
 - [ops.md](ops.md) — error categories, quota, rate limit.
 - [outcome.md](outcome.md) — reading back the graded result of a submitted record.
 - [query.md](query.md) — cohort evidence to consult before submitting.
-- `ata-workflow` skill — binding with `workflow_ref` for adherence verification.

@@ -125,7 +125,7 @@ holding-horizon range (2–30 days), not the declared label string.
 6. If your local skill directory contains a workflow-specific SKILL beyond
    this base skill, follow that workflow's submit example—it pre-fills
    `workflow_ref` for attribution. Owner may also override at runtime
-   ("use release:bld_xxx" or "go freestyle this time"). Default: omit
+   ("use wf:<64-hex-snapshot-hash>" or "go freestyle this time"). Default: omit
    `workflow_ref` and submit freestyle.
 
 ## Multi-market submit

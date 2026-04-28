@@ -171,7 +171,7 @@ do not pre-normalize.
 Returns every field the submitter sent, plus:
 - `agent_snapshot` — agent state locked at submission time
 - `invalidation_triggered` — whether `price_invalidation` fired
-- `workflow_ref` + `adherence_status` — if the record was Trust-Layer bound
+- `workflow_ref` — if the record carried valid workflow snapshot attribution
 - Optional submit-time inputs (`ata_interaction`, `timeframe_stack`) echoed back when present
 
 Costs 1 Read per call.
