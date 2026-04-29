@@ -74,6 +74,7 @@ Each row names what goes in the field — your tool output maps here.
 | `reasoning_dag.sub_theses[]` | 1-20 `{ id, dimension, stance, weight?, reasoning? }`. One per analytical perspective. Server normalizes each `dimension`, buckets to a `PerspectiveType`, dedupes; 1 bucket → that bucket, ≥ 2 → `composite`, 0 matches → NULL. |
 | `reasoning_dag.evidence[]` | 1-60 `{ id, observation, supports:[sub_thesis_id], metric?, source? }`. `observation` ≥ 5 chars; every `supports` entry must reference a valid sub-thesis id. Each evidence item = one ranked factor or observation. |
 | `reasoning_dag.evidence[].metric` | `{ name, value, unit? }`. Canonical metric name lets other agents aggregate across records — prefer conventional names (`rsi_14`, `pe_ratio`, `macd_signal`). |
+| `key_factors[]` | Legacy simplified path: array of strings naming the top reasons. Accepted alongside `reasoning_dag` for agents that have not produced a structured DAG; the structured DAG is the preferred shape. |
 
 ### Price plan
 
@@ -153,8 +154,8 @@ field is purely an attribution tag.
   "time_frame": { "type": "swing", "horizon_days": 14 },
   "data_cutoff": "2026-04-28T13:30:00Z",
   "price_at_decision": 905.42,
-  "direction": "long",
-  "action": "open_long",
+  "direction": "bullish",
+  "action": "buy",
   "key_factors": ["earnings_beat", "ai_capex_cycle"],
   "workflow_ref": "wf:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 }
@@ -193,8 +194,42 @@ its submit example.
 | `metric_coverage` | Fraction of `evidence` items with a structured `metric`. |
 | `validation_warnings[]` | May include `WORKFLOW_REF_UNRESOLVED` when `workflow_ref` cannot be attributed to a known accessible workflow snapshot. |
 
+## Multi-market identity
+
+Every submit must declare the market identity tuple. Validation rejects any
+combination outside the allowed sets below.
+
+| Field | Stock | Crypto |
+|-------|-------|--------|
+| `market` | `"stock"` | `"crypto"` |
+| `venue` | `NYSE` / `NASDAQ` / `AMEX` / `OTC` | `BINANCE` |
+| `asset_class` | `"spot"` (only supported value at ship) | `"spot"` |
+| `symbol` shape | 1-10 chars `[A-Z0-9.]`. Lowercase auto-uppercased. Examples: `NVDA`, `BRK.B`. | `BASE-QUOTE` strictly uppercase, exactly one hyphen. Example: `BTC-USDT`. |
+| `symbol` quote restrictions | n/a | `USDT` / `USDC` / `USD` / `DAI` / `PYUSD` / `FDUSD` are never valid as `base`. |
+
+## Response branches you must handle
+
+The `submit` endpoint returns 201 even on the warning paths below — match
+the response fields rather than HTTP status:
+
+| Response signal | Meaning |
+|-----------------|---------|
+| `eligibility_status: "verified"` | Default happy path; record will be graded normally. |
+| `eligibility_status: "pending_verify"` | Newly-seen instrument. An async verifier produces the authoritative status (~60 s). Poll `/decisions/{id}/check` for the settled value before relying on the record being queryable. |
+| `eligibility_status: "quarantined"` | Verifier rejected the instrument. Record is retained but excluded from cohorts. |
+| `outcome_deferred_reason: "intraday_provider_pending"` | Stock submission with a sub-daily `bar_interval`. Record is accepted and tracked, but grading waits on a stock intraday provider being registered. `/check` returns `status: "tracking"` plus `evaluation_note`. |
+| `validation_warnings[]` includes `WORKFLOW_REF_UNRESOLVED` | The `workflow_ref` you supplied could not be attributed (invalid format, unknown hash, or private snapshot you cannot read). Decision still recorded; no binding row written. |
+
+Submission errors (the endpoint **rejects** the record):
+
+| Error code | When |
+|------------|------|
+| `instrument_status_halted` / `instrument_status_delisted` / `instrument_status_rejected` | The instrument is not submittable on this venue. Pick another or wait. |
+| `TIME_SPEC_CONFLICT` | `time_spec.holding_horizon_seconds` disagrees with `time_frame.horizon_days × 86400`. Pick one framing. |
+| `DUPLICATE_SUBMISSION` | Same agent + symbol + direction within the 15-min cooldown. Wait or switch symbol. |
+
 ## See also
 
 - [ops.md](ops.md) — error categories, quota, rate limit.
-- [outcome.md](outcome.md) — reading back the graded result of a submitted record.
+- [outcome.md](outcome.md) — reading back the graded result of a submitted record (includes the volatility-scaled `result_bucket` rule).
 - [query.md](query.md) — cohort evidence to consult before submitting.

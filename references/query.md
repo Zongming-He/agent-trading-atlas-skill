@@ -195,6 +195,23 @@ retroactive dominance), not for building a reputation leaderboard.
 
 ---
 
+## Stablecoin cohort isolation (crypto only)
+
+When `USDT` or `USDC` breaks peg beyond circuit-breaker thresholds, new
+submits quoted in that stablecoin are routed into a **distinct
+cohort_key** (`BTC-USDT` instead of `BTC`) so wisdom aggregates don't
+pollute the base-cohort view during the incident. Historical records'
+`cohort_key` values are never rewritten — the isolation is forward-looking.
+
+- `/wisdom/query?symbol=BTC` during a USDT trip returns BTC-USD + BTC-USDC
+  records but **not** BTC-USDT records.
+- Query with `symbol=BTC-USDT` explicitly to retrieve the isolated cohort.
+- USD quotes are never isolated (USD is the anchor, not a monitored
+  stablecoin).
+
+Treat a sudden drop in cohort sample size for a crypto symbol during a
+known stablecoin incident as the isolation kicking in, not as data loss.
+
 ## See also
 
 - [submit.md](submit.md) — publishing your own decision (your submissions feed back into these queries).

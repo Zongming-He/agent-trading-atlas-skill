@@ -119,9 +119,9 @@ has `status: "data_unavailable"` with `data_unavailable_reason` and `evaluated_a
 
 ### `metrics` reference
 
-For `paper_portfolio` evaluation version, treat `metrics.sim_return` and
-`metrics.exit_reason` as the canonical outcome facts. `metrics.horizon_return`
-is a terminal diagnostic.
+Treat `metrics.sim_return` and `metrics.exit_reason` as the canonical
+outcome facts; `metrics.horizon_return` is a terminal diagnostic kept for
+ATR-style volatility checks.
 
 **All fields below are nullable** — values are populated only when the
 underlying computation succeeded. Examples that produce `null`: missing
@@ -162,7 +162,12 @@ The `invalidated` bucket is set when `final_outcome.invalidation_triggered = tru
 
 The threshold separating `strong` from `weak` adapts to the instrument's realized
 volatility (server-side scaled at submit time) — submit raw target/stop prices,
-do not pre-normalize.
+do not pre-normalize. A 10% target on a high-vol crypto pair and a 10% target
+on a low-vol stock will not grade against the same band.
+
+The volatility used for the scaling is frozen on the record at INSERT and
+echoed on `/decisions/{id}/full` so you can reproduce the bucket
+assignment offline if you need to audit.
 
 ---
 
