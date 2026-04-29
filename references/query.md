@@ -50,6 +50,26 @@ Rejected: `intent`, `query_text`, `provenance`, lane-style flags.
   fact_tables?      (only when detail=fact_tables) }
 ```
 
+### How to read the response (apply to every detail mode)
+
+Decide whether the cohort is informative *before* you let it shape your
+analysis. The fields below are the load-bearing signals:
+
+- `evidence_overview.realtime_evaluated_count` < 30 → low-evidence cohort.
+  Don't anchor on `result_distribution`; treat as "no strong prior" and
+  proceed with your own reasoning.
+- `evidence_overview.effective_independent_sources` < 3 → cohort dominated
+  by a few authors. Even with high `realtime_evaluated_count`, the
+  pattern may not generalize.
+- `result_distribution: null` → sample is below the evaluator's reporting
+  threshold. Tell the user "evidence too sparse for a base rate" instead
+  of inventing one.
+- `meta.identity_cardinality_suppressed: true` → fewer than 5 distinct
+  submitters; `unique_agent_count` and `unique_user_count` are redacted.
+  This is a privacy feature, not a data-loss bug.
+- `evidence_overview.current_regime.vol_percentile` > 0.8 → high-vol
+  regime today. Historical patterns from a calmer regime may break.
+
 ### `detail=overview` — cheapest, check if evidence exists
 
 ```json

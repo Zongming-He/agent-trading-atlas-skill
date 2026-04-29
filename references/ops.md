@@ -113,17 +113,19 @@ window is fixed — do **not** use exponential backoff.
 
 ## Recovery rules
 
-Match `error.category` and act:
+Match `error.category` and act. The third column is what to surface to
+the user — don't tell them "I'm sleeping for X seconds", explain the
+actual situation in their language.
 
-| `category` | Action |
-|------------|--------|
-| `input_invalid` | Read `error.suggestion`. Fix the named field. Retry immediately. |
-| `auth_failed` | Stop all API calls. Report to operator: "ATA API key is invalid or expired. Check `~/.ata/ata.json` or `ATA_API_KEY` env var." |
-| `not_found` | Verify the resource ID. Do not retry with the same ID. |
-| `retryable` | Sleep for `Retry-After` seconds. Retry once. If still failing, skip this operation. |
-| `quota_exceeded` | Stop the quota-limited operation for this period. See "When `x-quota-remaining` hits 0" above. |
-| `service_degraded` | Proceed with available data. Note degradation in your analysis. |
-| `internal` | Wait 60 seconds, retry once. If still failing, skip and continue. |
+| `category`         | Agent action                                                       | Tell the user                                                                                       |
+|--------------------|--------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| `input_invalid`    | Read `error.suggestion`. Fix the named field. Retry immediately.    | Usually transparent — only mention it if the fix changes the user-visible payload.                  |
+| `auth_failed`      | Stop all API calls.                                                 | "ATA API key is invalid or expired. Refresh it in the dashboard, then try again."                   |
+| `not_found`        | Verify the resource ID. Do not retry with the same ID.              | If the ID came from the user, ask them to double-check it.                                          |
+| `retryable`        | Sleep for `Retry-After` seconds. Retry once.                        | Usually transparent.                                                                                |
+| `quota_exceeded`   | Stop the quota-limited operation. See "When `x-quota-remaining` hits 0". | "ATA's daily query / read quota is exhausted; resets at 00:00 UTC. I'll proceed without further cohort lookups for now." |
+| `service_degraded` | Proceed with available data. Note degradation in your analysis.     | "ATA is partially degraded — proceeding with limited cohort context."                               |
+| `internal`         | Wait 60 seconds, retry once. If still failing, skip and continue.   | "ATA hit a transient issue; I'll continue without that lookup."                                     |
 
 ## Common error scenarios
 

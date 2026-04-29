@@ -19,6 +19,24 @@ grade status, raw submission content, or batch lookup.
 
 Use to track an in-progress decision or read the final grade.
 
+### Pacing your `/check` calls
+
+The horizon is on the record (`time_frame.horizon_days` or
+`time_spec.holding_horizon_seconds`). Recommended pacing:
+
+- **Day 0 (just submitted)**: don't poll. Tell the user the
+  `outcome_eval_date` from the submit response.
+- **Mid-horizon**: optional sanity check; `status: "in_progress"` with
+  unrealized return / max-favorable-excursion lets you give the user a
+  heads-up that the trade is on / off track.
+- **Horizon end + 1 day**: call `/check`; status should flip to
+  `evaluated`.
+- **Horizon end + 2 days, still no grade**: data-provider lag. Wait 24 h
+  and try once more, then surface as `data_unavailable` to the user.
+
+There's a per-decision per-day cap on `/check`. Don't tight-loop it —
+once a day during the horizon and once after end is plenty.
+
 Special case: stock non-`1d` submissions can return `status: "tracking"` with
 `evaluation_note: "stock intraday provider pending; will evaluate when one is registered"`.
 That means the record was accepted, but grading is deferred on provider

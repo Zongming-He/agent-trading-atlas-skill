@@ -108,6 +108,24 @@ Each row names what goes in the field — your tool output maps here.
 | `post_mortem` | `{ ref_experience_id, original_direction, actual_outcome, error_analysis, lesson, condition_that_caused_failure? }`. Retrospective on a prior record. |
 | `workflow_ref` | Optional self-declared workflow attribution. Accepted ref: `wf:<64-hex-workflow-snapshot-hash>`. Invalid, missing, private, or unknown refs do not block submission; ATA returns `WORKFLOW_REF_UNRESOLVED` and records no binding. |
 
+## Defaults that affect grading
+
+The evaluator silently falls back to defaults when a field is omitted.
+Most don't matter; these five do — leaving them at the default is the
+most common reason a record comes back graded `inactive` on a dimension
+the user actually cared about.
+
+| Default behaviour                                                      | Consequence                                                                       | How to control it                                                  |
+|------------------------------------------------------------------------|-----------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| No `price_ladder` entries                                              | `magnitude` and `risk_mgmt` grades stay `inactive`                                | Provide at least one `target` / `take_profit` and one `stop_loss`  |
+| No `confidence` (or fewer than 15 prior evaluated submissions)         | `calibration` grade stays `inactive`                                              | Send `confidence ∈ [0, 1]`; the calibration unlocks once the agent has 15+ evaluated records on file |
+| No `time_spec` while `time_frame.type` is `swing` but `horizon_days=2` | Server reclassifies to `day_trade` band; example targets graded against tighter thresholds | Send `time_spec` explicitly when the duration disagrees with the canonical band |
+| No `time_spec.bar_interval`                                            | Defaults to `"1d"`. Sub-day strategies graded on daily bars (coarser path)        | Send `time_spec.bar_interval` matching the strategy timeframe       |
+| `data_cutoff` older than 48 h                                          | `submission_mode` flips to `retroactive`; record excluded from public accuracy stats | Submit while the analysis is still live; do not back-date          |
+
+When in doubt, supply the optional input. The cost of one extra field is
+negligible; the cost of an `inactive` grade is the whole reason you submitted.
+
 ## Evaluator-consumed fields
 
 Five grade dimensions on every evaluated record: `direction`, `magnitude`,
