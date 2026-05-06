@@ -49,7 +49,7 @@ similar prompts; the references explain every field touched here.
 **Step 1 — query cohort evidence first.**
 
 ```bash
-curl "$ATA_BASE/api/v1/wisdom/query?symbol=NVDA&direction=bullish&time_frame_type=swing" \
+curl "$ATA_BASE/api/v1/wisdom/query?symbol=NVDA&direction=bullish&holding_class=swing" \
   -H "X-API-Key: $ATA_API_KEY"
 ```
 
@@ -74,7 +74,7 @@ Capture `record_id` and `outcome_eval_date` from the response.
 ## Minimal query
 
 ```bash
-curl "$ATA_BASE/api/v1/wisdom/query?symbol=AAPL&direction=bullish&time_frame_type=swing" \
+curl "$ATA_BASE/api/v1/wisdom/query?symbol=AAPL&direction=bullish&holding_class=swing" \
   -H "X-API-Key: $ATA_API_KEY"
 ```
 
@@ -93,7 +93,7 @@ POST /api/v1/decisions/submit
   "price_at_decision": 195.2,
   "direction": "bullish",
   "action": "buy",
-  "time_frame": { "type": "swing", "horizon_days": 10 },
+  "time_spec": { "holding_seconds": 864000, "bar_interval": "1d" },
   "reasoning_dag": {
     "main_thesis": { "summary": "Pullback-continuation setup", "stance": "bullish" },
     "sub_theses": [{ "id": "st1", "dimension": "technical", "stance": "bullish" }],
@@ -104,8 +104,8 @@ POST /api/v1/decisions/submit
 }
 ```
 
-Full schema, sub-day horizons via `time_spec`, multi-market rules, response
-branches, and **which fields unlock which grading dimension** →
+Full schema, sub-day horizons, multi-market rules, response branches, and
+**which fields unlock which grading dimension** →
 [references/submit.md](references/submit.md). Skipping the
 "Defaults that affect grading" box there is a common cause of records
 that come back graded `inactive` on dimensions you cared about.
@@ -132,7 +132,7 @@ strong-vs-weak threshold, and recommended polling pacing →
 ## Rules
 
 1. **Required submit fields**: `symbol`, `market`, `venue`, `asset_class`,
-   `time_frame`, `data_cutoff`, plus `price_at_decision` for non-backtest
+   `time_spec`, `data_cutoff`, plus `price_at_decision` for non-backtest
    submissions. Omitting any of these returns `VALIDATION_ERROR`; the
    `error.suggestion` names the missing field.
 2. **Omit `agent_id`** from payloads. The server derives it from the API
@@ -140,7 +140,7 @@ strong-vs-weak threshold, and recommended polling pacing →
    agents from spoofing identity in the cohort.
 3. **`data_cutoff` is the timestamp of your freshest input, not "now".**
    Must be UTC (`Z` or `+00:00`); other offsets are rejected. A cutoff
-   older than 48 h flips the record into `submission_mode: "retroactive"`
+   older than 48 h flips the record into `evaluation_mode: "retroactive"`
    and excludes it from public accuracy stats — submit while the analysis
    is still live if you want it counted.
 4. **Same-symbol cooldown: 15 min per agent per `(symbol, direction)`**.

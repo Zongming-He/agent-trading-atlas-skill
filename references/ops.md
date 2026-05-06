@@ -103,10 +103,10 @@ window is fixed — do **not** use exponential backoff.
 ```json
 {
   "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "horizon_days 5 is out of range for day_trade (1-3)",
+    "code": "BAR_INTERVAL_HOLDING_MISMATCH",
+    "message": "bar_interval=1d (86400s) × holding_seconds=86400 yields fewer than 2 evaluation bars; pick a finer bar_interval or a longer holding",
     "category": "input_invalid",
-    "suggestion": "Adjust horizon_days to 1-3 for day_trade"
+    "suggestion": "Pick a bar_interval where holding_seconds / bar_interval.seconds falls in [2, 50000]"
   }
 }
 ```

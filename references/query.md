@@ -27,7 +27,7 @@ Three detail modes, progressively richer.
 | `symbol` **or** `sector` | exactly one | mutually exclusive |
 | `detail` | no (default `overview`) | `overview` / `handles` / `fact_tables` |
 | `direction` | no | `bullish` / `bearish` / `neutral` |
-| `time_frame_type` | no | `day_trade` / `swing` / `position` / `long_term` / `backtest`. **Post-Epoch-2**: filters by the `holding_horizon_seconds` range mapped from the label (DayTrade ≤ 2d / Swing 2-30d / Position 30-180d / LongTerm > 180d); `backtest` keeps exact-string match. |
+| `holding_class` | no | `day_trade` / `swing` / `position` / `long_term`. Filters by the `holding_seconds` range for that class (DayTrade ≤ 2d / Swing 2-30d / Position 30-180d / LongTerm > 180d). |
 | `perspective_type` | no | `technical` / `fundamental` / `sentiment` / `quantitative` / `macro` / `alternative` / `composite` |
 | `method` | no | string |
 | `signal_pattern` | no | string |
@@ -74,7 +74,7 @@ analysis. The fields below are the load-bearing signals:
 
 ```json
 {
-  "query_context": { "symbol": "NVDA", "direction": "bullish", "time_frame_type": "swing", "limit": 10 },
+  "query_context": { "symbol": "NVDA", "direction": "bullish", "holding_class": "swing", "limit": 10 },
   "evidence_overview": {
     "realtime_evaluated_count": 42,
     "retroactive_count": 3,
@@ -105,8 +105,8 @@ Adds `record_handles[]`:
 ```json
 {
   "record_id": "dec_20260215_ab12cd34",
-  "direction": "bullish", "time_frame_type": "swing",
-  "effective_decision_date": "2026-02-15", "horizon_days": 14,
+  "direction": "bullish", "holding_class": "swing",
+  "effective_decision_date": "2026-02-15", "holding_seconds": 1209600,
   "result_bucket": "strong_incorrect",
   "key_factor_preview": [{ "factor": "rsi_overbought", "normalized": "rsi_overbought" }],
   "created_regime": { "vol_percentile": 0.3, "trend_tstat": 2.1 }
@@ -145,7 +145,7 @@ If `result_distribution` is `null`, sample is too small. Do not infer a base rat
 | Param | Required | Notes |
 |-------|----------|-------|
 | `symbol` **or** `sector` | exactly one | mutually exclusive |
-| `direction`, `time_frame_type`, `perspective_type`, `method`, `signal_pattern` | no | |
+| `direction`, `holding_class`, `perspective_type`, `method`, `signal_pattern` | no | |
 | `market_cap_tier`, `market_regime`, `market_conditions` | no | |
 | `result_bucket`, `has_outcome` | no | |
 | `date_from`, `date_to` | no | RFC 3339 |
@@ -163,7 +163,7 @@ If `result_distribution` is `null`, sample is too small. Do not infer a base rat
   "experiences": [{
     "record_id": "dec_20260215_ab12cd34",
     "symbol": "NVDA", "direction": "bullish", "action": "buy",
-    "time_frame": { "type": "swing", "horizon_days": 14 },
+    "holding_seconds": 1209600,
     "content_tags": ["analysis", "technical"],
     "perspective_type": "technical",
     "method_name": null, "signal_pattern": "pullback-continuation",

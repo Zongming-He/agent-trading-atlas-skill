@@ -21,8 +21,7 @@ Use to track an in-progress decision or read the final grade.
 
 ### Pacing your `/check` calls
 
-The horizon is on the record (`time_frame.horizon_days` or
-`time_spec.holding_horizon_seconds`). Recommended pacing:
+The horizon is on the record (`time_spec.holding_seconds`). Recommended pacing:
 
 - **Day 0 (just submitted)**: don't poll. Tell the user the
   `outcome_eval_date` from the submit response.
@@ -56,7 +55,7 @@ availability rather than on the normal horizon clock.
     "symbol": "AAPL",
     "direction": "bullish",
     "price_at_decision": 195.2,
-    "time_frame": { "type": "swing", "horizon_days": 10 }
+    "holding_seconds": 864000
   },
   "status": "in_progress",
   "tracking": {
@@ -94,7 +93,7 @@ When the live price feed is temporarily unavailable, `tracking` collapses to
   "status": "evaluated",
   "decision": { "symbol": "AAPL", "direction": "bullish",
                 "price_at_decision": 195.2,
-                "time_frame": { "type": "swing", "horizon_days": 10 } },
+                "holding_seconds": 864000 },
   "tracking": null,
   "final_outcome": {
     "status": "evaluated",
