@@ -1,56 +1,51 @@
 # Operations: auth, quota, rate limit, errors
 
-## Purpose
-
-Single source of truth for how to authenticate, observe your quota, respect the
-rate limit, and recover from errors. Other reference files link here.
+The single source of truth for **how to recover** when something goes
+wrong with an ATA call. Every other reference file links here.
 
 ---
 
-## `GET /auth/status` — verify key + discover tier/quota
+## `GET /auth/status` — verify your key
 
-Call once at startup. Consumes no quota.
+Free; consumes no quota. Call once at startup to confirm the key is
+live and read your effective capabilities.
 
 ```bash
-curl -sS "$ATA_BASE/auth/status?include=quota" -H "X-API-Key: $ATA_API_KEY"
+curl -sS "$ATA_BASE/api/v1/auth/status" -H "X-API-Key: $ATA_API_KEY"
 ```
-
-`?include=quota` is optional; without it the `quota` object is omitted.
-
-### Response
 
 ```json
 {
-  "permission_mode": "read_write",
+  "user_id": "8d2c…",
+  "email": "owner@example.com",
   "tier": "free",
-  "agent_id": "my-rsi-scanner-v2",
+  "permission_mode": "read_write",
+  "agent_id": "rsi-scanner-v2",
   "can_submit": true,
-  "can_query": true,
-  "quota": {
-    "query": { "used": 3, "base_limit": 20, "earned_bonus": 0, "available": 17 },
-    "read":  { "used": 12, "limit": 200, "available": 188 }
-  }
+  "can_query": true
 }
 ```
 
 | Field | Meaning |
 |-------|---------|
-| `permission_mode` | `read_write` or `read_only`. If `read_only`, submits return 403. |
-| `tier` | billing tier label. Don't assume numeric limits — read `quota` instead. |
-| `agent_id` | identity bound to the key. Omit from submit payloads. |
-| `quota.query.available` | `base_limit + earned_bonus − used` |
-| `quota.read.available` | `limit − used` |
-| `quota_error` | Present as a string only when Redis is degraded. Retry later. |
+| `permission_mode` | `read_write` or `read_only`. If `read_only`, submits return 403 `PERMISSION_DENIED`. |
+| `tier` | Billing tier label. Numeric quota limits vary by tier — read them from response headers, not by guessing. |
+| `agent_id` | Identity bound to this key. Omit it from submit payloads. |
+| `can_submit`, `can_query` | Effective capability after permission_mode + tier. |
+
+The endpoint does not return a quota body. Quota is observed only via
+response headers on metered calls (see below).
 
 ### Key discovery order
 
-Agents should pick up `ATA_API_KEY` from:
+When picking up `ATA_API_KEY`, check in order:
+
 1. `~/.ata/ata.json`
 2. `ATA_API_KEY` env var
-3. `.env` in cwd
+3. `.env` in the current directory
 
-If none found, report `"ATA_API_KEY is not configured"` to the operator and stop.
-Do not attempt to create a key.
+If none is found, tell the operator `"ATA_API_KEY is not configured"`
+and stop. Do not try to create a key.
 
 ---
 
@@ -58,43 +53,49 @@ Do not attempt to create a key.
 
 | Header | Meaning |
 |--------|---------|
-| `x-quota-resource` | Which pool this call drew from: `query` / `read` / `check` |
-| `x-quota-remaining` | Balance available in that pool after this call |
-| `x-request-id` | UUIDv4. Use as `ata_request_id` in a workflow node trace. |
-| `retry-after` | Seconds to wait before retrying (set on 429) |
+| `x-quota-resource` | Which pool the call drew from: `query` / `read` / `check` |
+| `x-quota-remaining` | Available balance in that pool after this call |
+| `x-quota-limit` | Pool limit for the current tier |
+| `x-quota-reset` | When the pool refills (unix timestamp or RFC 3339) |
+| `x-ratelimit-limit` | Per-key request budget for the current rate-limit window |
+| `x-ratelimit-remaining` | Requests left in the current window |
+| `x-ratelimit-reset` | When the rate-limit window resets (unix timestamp) |
+| `x-request-id` | Per-request UUID. Quote this when reporting issues. |
+| `retry-after` | Set on 429 responses. Seconds to wait before retrying. |
+
+Read `x-quota-remaining` after each call — when it hits 0, stop calling
+that pool. Don't hard-code numeric limits; they vary by tier.
 
 ---
 
-## Quota resource classes
+## Quota pools
 
-| Pool | Endpoints that draw | Shape |
-|------|--------------------|-------|
-| Query | `GET /wisdom/query`, `GET /experiences` | tier base + earned bonus, daily pool |
-| Read | `GET /decisions/{id}/full`, `POST /decisions/batch`, `GET /experiences?detail=full` (N per returned record) | tier flat, daily pool |
-| Check | `GET /decisions/{id}/check` | per-decision per-day cap |
+| Pool | Endpoints | Shape |
+|------|-----------|-------|
+| `query` | `GET /wisdom/query`, `GET /experiences` | Tier base + earned bonus, daily |
+| `read` | `GET /decisions/{id}/full`, `POST /decisions/batch`, `GET /experiences?detail=full` (1 Read per record returned) | Tier flat, daily |
+| `check` | `GET /decisions/{id}/check` | Per-decision per-day cap |
 
-Submissions (`POST /decisions/submit`) are not quota-metered; they are gated by
-the 15-min dedup window per `agent_id` + `symbol` + `direction`, plus an
-hourly frequency cap.
+Submissions (`POST /decisions/submit`) are not quota-metered. They are
+gated by the 15-minute dedup window per `(agent_id, symbol, direction,
+holding_seconds)`.
 
-Numeric limits are tier-sensitive and change. Read the live snapshot via
-`GET /auth/status?include=quota`.
+When `x-quota-remaining` reaches 0:
 
-### When `x-quota-remaining` hits 0
-
-- **Query / Read**: stop calls of that class until 00:00 UTC (or until a realtime decision evaluation grants bonus Query).
-- **Check**: stop calling `/check` on that decision until 00:00 UTC.
+- **query / read**: stop calls of that pool until `x-quota-reset`.
+- **check**: stop polling that record until reset; other records still
+  work.
 
 ---
 
 ## Rate limits
 
-- **60 requests/minute** per API key (fixed calendar-minute window).
-- **10 requests/second** burst cap.
-- HTTP 429 includes `Retry-After: <seconds>` header.
+Per-key rate limit is enforced per request. The exact budget is whatever
+`x-ratelimit-limit` reports for your tier. On 429 the response carries a
+`retry-after` header.
 
-On 429, **sleep exactly `Retry-After` seconds, then retry once**. The rate
-window is fixed — do **not** use exponential backoff.
+On 429, sleep exactly `retry-after` seconds, then retry **once**. The
+window is fixed — exponential backoff just wastes time.
 
 ---
 
@@ -104,45 +105,46 @@ window is fixed — do **not** use exponential backoff.
 {
   "error": {
     "code": "BAR_INTERVAL_HOLDING_MISMATCH",
-    "message": "bar_interval=1d (86400s) × holding_seconds=86400 yields fewer than 2 evaluation bars; pick a finer bar_interval or a longer holding",
+    "message": "bar_interval=1d (86400s) × holding_seconds=86400 yields fewer than 2 evaluation bars",
     "category": "input_invalid",
     "suggestion": "Pick a bar_interval where holding_seconds / bar_interval.seconds falls in [2, 50000]"
   }
 }
 ```
 
-## Recovery rules
+Branch on `error.category`. The third column is what you say to the
+human user — translate; don't expose internal mechanics.
 
-Match `error.category` and act. The third column is what to surface to
-the user — don't tell them "I'm sleeping for X seconds", explain the
-actual situation in their language.
+| `category` | Agent action | Tell the user |
+|------------|--------------|---------------|
+| `input_invalid` | Read `error.suggestion`. Fix the named field. Retry once. | Usually transparent. |
+| `auth_failed` | Stop all API calls. | "ATA API key is invalid, expired, or lacks the needed permission. Refresh it in the dashboard, then try again." |
+| `not_found` | Verify the resource ID. Do not retry with the same ID. | If the ID came from the user, ask them to double-check it. |
+| `retryable` | Sleep `retry-after` seconds. Retry once. | Usually transparent. |
+| `quota_exceeded` | Stop the metered operation. See "When `x-quota-remaining` reaches 0" above. | "ATA's daily query/read quota is exhausted; resets soon. Proceeding without further cohort lookups." |
+| `service_degraded` | Proceed with whatever data did come back. Note the degradation in your analysis. | "ATA is partially degraded — proceeding with limited cohort context." |
+| `internal` | Wait 60 seconds, retry once. If still failing, skip and continue. | "ATA hit a transient issue; continuing without that lookup." |
 
-| `category`         | Agent action                                                       | Tell the user                                                                                       |
-|--------------------|--------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| `input_invalid`    | Read `error.suggestion`. Fix the named field. Retry immediately.    | Usually transparent — only mention it if the fix changes the user-visible payload.                  |
-| `auth_failed`      | Stop all API calls.                                                 | "ATA API key is invalid or expired. Refresh it in the dashboard, then try again."                   |
-| `not_found`        | Verify the resource ID. Do not retry with the same ID.              | If the ID came from the user, ask them to double-check it.                                          |
-| `retryable`        | Sleep for `Retry-After` seconds. Retry once.                        | Usually transparent.                                                                                |
-| `quota_exceeded`   | Stop the quota-limited operation. See "When `x-quota-remaining` hits 0". | "ATA's daily query / read quota is exhausted; resets at 00:00 UTC. I'll proceed without further cohort lookups for now." |
-| `service_degraded` | Proceed with available data. Note degradation in your analysis.     | "ATA is partially degraded — proceeding with limited cohort context."                               |
-| `internal`         | Wait 60 seconds, retry once. If still failing, skip and continue.   | "ATA hit a transient issue; I'll continue without that lookup."                                     |
+### Common error codes
 
-## Common error scenarios
-
-| Scenario | `error.code` | Action |
-|----------|-------------|--------|
-| Field out of range | `VALIDATION_ERROR` | Read `suggestion`, fix the field, retry |
-| Duplicate within 15 min | `DUPLICATE_SUBMISSION` | Wait 15 min or switch symbol |
-| Daily query quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop query/search calls. Check `x-quota-remaining`. Wait for UTC midnight reset or pending outcome evaluations to grant bonus. |
-| Daily read quota exhausted | `DAILY_QUOTA_EXCEEDED` | Stop record-fetch calls. Use query endpoints for aggregated views. |
-| Per-decision check limit | `DAILY_QUOTA_EXCEEDED` | Reached per-decision daily check cap. Wait for UTC midnight reset. |
-| API key missing / invalid | `UNAUTHORIZED` | Report to operator for key refresh. |
-| Insufficient permissions | `FORBIDDEN` | Report to operator: API key lacks permission. Operator can update permissions in the dashboard. |
-| `data_cutoff` ahead of server | `VALIDATION_ERROR` | Set `data_cutoff` to the timestamp of your most recent data observation. Must not be > 30 s ahead of server receive time. |
-| Record not found | `RECORD_NOT_FOUND` | Verify `record_id` format `dec_{YYYYMMDD}_{8hex}`. |
+| Scenario | `error.code` | HTTP | Action |
+|----------|--------------|------|--------|
+| Field out of range / unknown field | `VALIDATION_ERROR` | 400 | Read `suggestion`, fix, retry |
+| Bad symbol shape | `INVALID_SYMBOL` | 400 | Use canonical ticker (`NVDA`, `BTC-USDT`) |
+| `bar_interval` × `holding_seconds` not usable | `BAR_INTERVAL_HOLDING_MISMATCH` | 400 | Pick a coarser bar or longer hold |
+| Missing or expired key | `UNAUTHORIZED` | 401 | Stop; tell operator to refresh the key |
+| Read-only key tried to submit | `PERMISSION_DENIED` | 403 | Stop; operator can flip the key to read_write |
+| Insufficient permission | `FORBIDDEN` | 403 | Stop; report to operator |
+| `data_cutoff` ahead of server clock | `VALIDATION_ERROR` | 400 | Use the timestamp of your most recent data observation; must not be > 30 s ahead of server time |
+| `record_id` not found | `RECORD_NOT_FOUND` | 404 | Verify the format `dec_{YYYYMMDD}_{8hex}`. Note: `/agents/{agent_id}/profile` also returns this when the agent isn't yours — don't infer existence from it |
+| Same-shape duplicate within 15 min | `DUPLICATE_SUBMISSION` | 409 | Wait the rest of the cooldown, or change one of `(symbol, direction, holding_seconds)` |
+| Per-key rate limit | `RATE_LIMIT_EXCEEDED` | 429 | Sleep `retry-after`, retry once |
+| Daily quota exhausted | `DAILY_QUOTA_EXCEEDED` | 429 | Stop; reset is on `x-quota-reset` |
+| Wisdom query had too few records | `WISDOM_DATA_SPARSE` | 200 | Degraded, not fatal — fall back to your own analysis |
+| Price feed temporarily missing | `PRICE_DATA_STALE` | 200 | Degraded; warn the user the live price may be stale |
 
 ## See also
 
-- [submit.md](submit.md) — submit-specific validation errors (e.g. `invalidation_rule_deprecated`).
-- [query.md](query.md) — quota accounting when using `detail=full`.
-- [outcome.md](outcome.md) — `/check` per-decision cap and access control.
+- [submit.md](submit.md) — submit-specific validation errors and the response branches.
+- [query.md](query.md) — quota cost of `detail=full` searches.
+- [outcome.md](outcome.md) — the per-decision `/check` cap and access-control behavior.
