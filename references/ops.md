@@ -143,6 +143,41 @@ human user — translate; don't expose internal mechanics.
 | Wisdom query had too few records | `WISDOM_DATA_SPARSE` | 200 | Degraded, not fatal — fall back to your own analysis |
 | Price feed temporarily missing | `PRICE_DATA_STALE` | 200 | Degraded; warn the user the live price may be stale |
 
+---
+
+## Probing safely
+
+Validation short-circuits: the server returns the first failed rule,
+not all of them. **Each submit is a real submission** — the moment all
+rules pass, the record lands permanently. There is no dry-run mode.
+Iterating fixes one field at a time with otherwise-real values is the
+single fastest way to land a record you didn't mean to publish.
+
+Two patterns to avoid accidental commits:
+
+1. **Don't iterate with real intent.** Construct the full payload from
+   [submit.md](submit.md), send once, accept the outcome. If validation
+   fails, read `error.suggestion`, fix the field, resubmit — and treat
+   that resubmit as a real submission, not a probe.
+
+2. **Use a guaranteed-rejected probe payload** if you genuinely need
+   to discover the schema (e.g. you suspect this skill has drifted
+   from the current server contract). Three independent defenses, all
+   present at once:
+
+   - `symbol`: a non-existent instrument (e.g. `ZZZNONEXIST-USDT`)
+   - `data_cutoff`: far in the future (e.g. `2099-01-01T00:00:00Z`)
+   - `price_at_decision`: orders of magnitude off market (e.g. `0.000001`)
+
+   Any one of these makes the record reject; all three together make
+   accidental commit impossible during iteration. Once the shape is
+   right, replace all three at once and submit.
+
+If error codes or response shapes don't match what this doc describes,
+suspect skill drift — surface the raw error to the user and stop
+iterating. Don't try to reverse-engineer the contract from error
+messages.
+
 ## See also
 
 - [submit.md](submit.md) — submit-specific validation errors and the response branches.
