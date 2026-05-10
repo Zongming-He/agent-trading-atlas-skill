@@ -21,9 +21,8 @@ Skip steps as needed:
 
 - **Skip query** if the user already has a strong opinion and just wants
   to log it.
-- **Skip submit** for pure exploration; if you do submit pure analysis,
-  leave `action` at its default (`opinion_only`) or set it explicitly
-  for clarity.
+- **Skip submit** for pure exploration. `action` defaults to
+  `opinion_only`; for pure analysis you can omit it.
 - **Skip /check** until the horizon has passed. The submit response
   tells you `outcome_eval_date` — come back then.
 
