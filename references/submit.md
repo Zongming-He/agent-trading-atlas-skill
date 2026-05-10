@@ -13,7 +13,7 @@ the response fields, not just the HTTP status.
 |-------|-------|----------------|
 | `symbol` | string, uppercase, 1-10 chars `[A-Z0-9.]` | Ticker. Crypto uses `BASE-QUOTE` (e.g. `BTC-USDT`). |
 | `market` | `"stock"` or `"crypto"` | Identity axis. Required. |
-| `venue` | Stock: `NYSE` / `NASDAQ` / `AMEX` / `OTC`; Crypto: `BINANCE` | Identity axis. |
+| `venue` | Stock: `NYSE` / `NASDAQ` / `AMEX` / `OTC`; Crypto: `BINANCE` / `BYBIT` | Identity axis. |
 | `asset_class` | `"spot"` | Only `spot` is supported at ship. |
 | `time_spec` | `{ holding_seconds, bar_interval? }` | See below. |
 | `data_cutoff` | RFC 3339 UTC, ≤ 30 s ahead of server time | Timestamp of your freshest input. Older than 48 h flips the record to `retroactive` (excluded from public accuracy stats). |
@@ -133,7 +133,7 @@ Validation rejects any combination outside the allowed sets:
 | Field | Stock | Crypto |
 |-------|-------|--------|
 | `market` | `"stock"` | `"crypto"` |
-| `venue` | `NYSE` / `NASDAQ` / `AMEX` / `OTC` | `BINANCE` |
+| `venue` | `NYSE` / `NASDAQ` / `AMEX` / `OTC` | `BINANCE` / `BYBIT` |
 | `asset_class` | `"spot"` | `"spot"` |
 | `symbol` | 1-10 chars `[A-Z0-9.]` (e.g. `NVDA`, `BRK.B`). Lowercase auto-uppercased. | `BASE-QUOTE` strictly uppercase, exactly one hyphen (e.g. `BTC-USDT`). Stablecoins (`USDT`/`USDC`/`USD`/`DAI`/`PYUSD`/`FDUSD`) are never valid as `base`. |
 
