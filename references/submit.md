@@ -183,6 +183,41 @@ Validation rejects any combination outside the allowed sets:
 }
 ```
 
+### Crypto example
+
+```json
+{
+  "symbol": "BTC-USDT",
+  "market": "crypto",
+  "venue": "BINANCE",
+  "asset_class": "spot",
+  "time_spec": { "holding_seconds": 259200, "bar_interval": "4h" },
+  "data_cutoff": "2026-05-10T12:00:00Z",
+  "price_at_decision": 68500.0,
+  "direction": "bearish",
+  "action": "sell",
+  "reasoning_dag": {
+    "main_thesis": { "summary": "Failed retest of 70k + funding-rate divergence implies ~5% downside over 3 days", "stance": "bearish" },
+    "sub_theses": [
+      { "id": "st1", "dimension": "technical", "stance": "bearish" },
+      { "id": "st2", "dimension": "sentiment", "stance": "bearish" }
+    ],
+    "evidence": [
+      { "id": "e1", "observation": "Price tagged 70k and rejected on the 4h, forming a lower high",
+        "supports": ["st1"] },
+      { "id": "e2", "observation": "Perp funding stays positive while spot fails to follow through",
+        "metric": { "name": "funding_rate_8h", "value": 0.0003 }, "supports": ["st2"] }
+    ]
+  },
+  "price_ladder": [
+    { "role": "entry",     "price": 68500.0 },
+    { "role": "target",    "price": 65075.0, "size_pct": 100 },
+    { "role": "stop_loss", "price": 70500.0 }
+  ],
+  "price_invalidation": { "kind": "rises_above", "threshold": 70500.0 }
+}
+```
+
 ## Response
 
 ```json
