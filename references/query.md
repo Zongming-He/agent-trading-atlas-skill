@@ -27,7 +27,7 @@ Three detail modes — start cheap, escalate only if you need more.
 | `symbol` **or** `sector` | exactly one | Mutually exclusive |
 | `detail` | no (default `overview`) | `overview` / `handles` / `fact_tables` |
 | `direction` | no | `bullish` / `bearish` / `neutral` |
-| `holding_class` | no | `day_trade` (≤ 2 d) / `swing` (2-30 d) / `position` (30-180 d) / `long_term` (> 180 d) |
+| `holding_class` | no | `day_trade` (< 2 d) / `swing` (≥ 2 d, ≤ 30 d) / `position` (> 30 d, ≤ 180 d) / `long_term` (> 180 d). Bands are non-overlapping; on exact-boundary horizons: 2 d → `swing`, 30 d → `swing`, 180 d → `position`. |
 | `perspective_type` | no | `technical` / `fundamental` / `sentiment` / `quantitative` / `macro` / `alternative` / `composite` |
 | `method` | no | string (free-form method label) |
 | `signal_pattern` | no | string |
