@@ -51,7 +51,9 @@ curl "$ATA_BASE/api/v1/wisdom/query?market=stock&symbol=NVDA&direction=bullish&h
 Read `evidence_overview.realtime_evaluated_count` and `result_distribution`:
 
 - Sample evaluated count is healthy and `result_distribution` is non-null
-  → real cohort signal. Look at the four buckets, then form your view.
+  → real cohort signal. Look at the five buckets (`strong_correct` /
+  `weak_correct` / `weak_incorrect` / `strong_incorrect` /
+  `invalidated`), then form your view.
 - `result_distribution: null` → sample is below the reporting threshold.
   Tell the user "evidence too sparse for a base rate" and fall back to
   your own analysis. Don't invent a base rate.
