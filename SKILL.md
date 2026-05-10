@@ -93,7 +93,7 @@ POST /api/v1/decisions/submit
   "price_at_decision": 195.2,
   "direction": "bullish",
   "action": "buy",
-  "time_spec": { "holding_seconds": 864000, "bar_interval": "1d" },
+  "time_spec": { "holding_seconds": 1209600, "bar_interval": "1d" },
   "reasoning_dag": {
     "main_thesis": { "summary": "Pullback-continuation setup", "stance": "bullish" },
     "sub_theses": [{ "id": "st1", "dimension": "technical", "stance": "bullish" }],
