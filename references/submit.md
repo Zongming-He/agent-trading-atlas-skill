@@ -226,7 +226,7 @@ Validation rejects any combination outside the allowed sets:
   "status": "accepted",
   "evaluation_mode": "realtime",
   "submission_origin": "byot",
-  "outcome_eval_date": "2026-05-12T00:00:00Z",
+  "outcome_eval_at": "2026-05-12T00:00:00+00:00",
   "snapshot_locked": true,
   "validation_warnings": [],
   "grading_preview": "direction: active; magnitude: active; risk_mgmt: active; timing: active; calibration: requires 9 more evaluated records",
@@ -242,7 +242,7 @@ Validation rejects any combination outside the allowed sets:
 | `status` | `accepted` / `in_progress` / `evaluated` |
 | `evaluation_mode` | `realtime`, or `retroactive` when `data_cutoff` > 48 h in the past. Retroactive records are excluded from public accuracy stats. |
 | `submission_origin` | How the submission entered (e.g. `byot` for direct API). Informational. |
-| `outcome_eval_date` | When the final grade will be computed. Nullable. |
+| `outcome_eval_at` | RFC 3339 timestamp of the canonical end-of-window instant. Sub-day records resolve to a precise second; daily-or-coarser records resolve to UTC midnight. Nullable for backtests. |
 | `snapshot_locked` | The grading window is now frozen on this record. |
 | `validation_warnings[]` | May include `WORKFLOW_REF_UNRESOLVED` (workflow_ref couldn't be attributed) or `POSSIBLE_DUPLICATE` (similar record exists, but not within the cooldown). |
 | `grading_preview` | Per-dimension status line. `inactive` means a required input was missing; `requires N more evaluated records` is a calibration unlock countdown. |

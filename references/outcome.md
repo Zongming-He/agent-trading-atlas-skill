@@ -20,7 +20,7 @@ the open-window view and the graded outcome — branch on `trade_state.kind`.
 The grading horizon is on the record (`time_spec.holding_seconds`).
 
 - **Day 0 (just submitted)**: don't poll. Tell the user the
-  `outcome_eval_date` from the submit response.
+  `outcome_eval_at` (RFC 3339 timestamp) from the submit response.
 - **Mid-horizon**: optional sanity check. `kind: "tracking"` exposes
   `interim.unrealized_return`, MFE/MAE, and target/stop progress so you
   can give the user a heads-up that the trade is on or off track.
@@ -76,31 +76,36 @@ state is owner-only.
   "interim": {
     "checked_at": "2026-04-22T12:00:00Z",
     "unrealized_return": 0.0169,
-    "days_elapsed": 3,
-    "days_remaining": 7,
+    "elapsed_seconds": 259200,
+    "remaining_seconds": 604800,
+    "progress_ratio": 0.3,
     "max_favorable_so_far": 0.025,
     "max_adverse_so_far": -0.008,
     "target_progress": 0.35,
     "stop_loss_distance": 0.12,
     "direction_alignment": 1,
-    "magnitude_progress": 0.40,
     "path_alignment_rate": 0.67,
-    "days_aligned": 2,
-    "days_tracked": 3,
+    "bars_aligned": 2,
+    "bars_observed": 3,
     "stop_breached": false,
     "sim_position_open": true,
     "sim_exit_reason": null,
-    "sim_exit_day": null,
+    "sim_exit_bar": null,
     "sim_current_return": 0.0169
   }
 }
 ```
 
-Returns / progress / alignment metrics are normalized (returns and
-ratios), never dollar prices. All `Option` fields can be `null` when the
-underlying computation has no value yet — for example
-`target_progress` / `stop_loss_distance` are `null` when the record had
-no `price_ladder` target/stop entry.
+`elapsed_seconds` / `remaining_seconds` are wall-clock against the
+canonical `(decision_ts, window_end_ts)` window; `progress_ratio =
+elapsed / holding` clamped to `[0.0, 1.0]`. `bars_observed` and
+`bars_aligned` count observation bars at the record's bar interval —
+a 30-min scalp on 5m bars reports `bars_observed = 6`.
+
+Returns / progress / alignment metrics are normalized, never dollar
+prices. `Option` fields are `null` when their input is missing —
+e.g. `target_progress` is `null` when the record had no `price_ladder`
+target entry.
 
 ### `kind: "closed"`
 

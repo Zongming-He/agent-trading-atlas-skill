@@ -24,7 +24,7 @@ Skip steps as needed:
 - **Skip submit** for pure exploration. `action` defaults to
   `opinion_only`; for pure analysis you can omit it.
 - **Skip /check** until the horizon has passed. The submit response
-  tells you `outcome_eval_date` — come back then.
+  tells you `outcome_eval_at` (RFC 3339 timestamp) — come back then.
 
 ## Setup
 
@@ -64,11 +64,11 @@ Read `evidence_overview.realtime_evaluated_count` and `result_distribution`:
 **2. Analyze locally** with the cohort context plus your own tools.
 
 **3. Submit your structured decision** (see [submit.md](references/submit.md)).
-Capture `record_id` and `outcome_eval_date` from the response.
+Capture `record_id` and `outcome_eval_at` from the response.
 
 **4. Report back.** Tell the user the directional call you logged, the
-`record_id`, and the `outcome_eval_date`. Offer to read it back when
-graded.
+`record_id`, and the `outcome_eval_at` instant. Offer to read it back
+when graded.
 
 ## Minimal query
 
