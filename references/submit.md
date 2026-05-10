@@ -31,6 +31,17 @@ schema doesn't recognize, the server returns `VALIDATION_ERROR`.
 | `holding_seconds` | integer ≥ 0 | required |
 | `bar_interval` | `1m` / `5m` / `15m` / `30m` / `1h` / `4h` / `12h` / `1d` / `1w` | per-market default at the evaluator (typically `1d`) |
 
+Common `holding_seconds` values:
+
+| Horizon | Seconds |
+|---------|---------|
+| 1 day | `86400` |
+| 3 days | `259200` |
+| 1 week | `604800` |
+| 2 weeks | `1209600` |
+| 1 month (30 d) | `2592000` |
+| 3 months | `7776000` |
+
 Always send `bar_interval` for sub-day strategies. Omitting it on an
 intraday holding can fall back to `1d` and grade the trade on coarser
 bars than you analyzed.
