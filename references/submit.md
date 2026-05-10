@@ -79,7 +79,7 @@ Each row names what goes in the field — your tool output maps here.
 | Field | Semantics |
 |-------|-----------|
 | `price_ladder[]` | ≤ 20 `{ role, price>0, size_pct?(0-100), note? }`. `role ∈ entry / add_zone / target / take_profit / stop_loss / invalidation`. |
-| `price_invalidation` | `{ kind: "drops_below"\|"rises_above", threshold: number }`. **Evaluator executes this rule** during the horizon; firing flips the record's `result_bucket` to `invalidated`. |
+| `price_invalidation` | `{ kind: "drops_below"\|"rises_above", threshold: number }`. **This is the field the evaluator executes** during the horizon; firing flips the record's `result_bucket` to `invalidated`. The `price_ladder` entry with `role: "invalidation"` is descriptive only — if you want the rule to fire automatically, set `price_invalidation` here. |
 | `business_invalidation_notes[]` | ≤ 10 strings, ≤ 500 chars each. Stored but never executed. |
 
 ### Context
