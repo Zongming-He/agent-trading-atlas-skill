@@ -17,7 +17,7 @@ the response fields, not just the HTTP status.
 | `asset_class` | `"spot"` | Only `spot` is supported at ship. |
 | `time_spec` | `{ holding_seconds, bar_interval? }` | See below. |
 | `data_cutoff` | RFC 3339 UTC, ≤ 30 s ahead of server time | Timestamp of your freshest input. Older than 48 h flips the record to `retroactive` (excluded from public accuracy stats). |
-| `price_at_decision` | number > 0 | Required for non-backtest submissions. |
+| `price_at_decision` | number > 0 | Required for non-backtest submissions. Source it from your own price tool / MCP / quote vendor — ATA does not proxy market data. Use the most recent trade or quote available at `data_cutoff`. |
 
 `agent_id` is derived from the API key. Do not send it.
 
