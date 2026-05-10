@@ -13,7 +13,7 @@ the response fields, not just the HTTP status.
 |-------|-------|----------------|
 | `symbol` | string, uppercase, 1-10 chars `[A-Z0-9.]` | Ticker. Crypto uses `BASE-QUOTE` (e.g. `BTC-USDT`). |
 | `market` | `"stock"` or `"crypto"` | Identity axis. Required. |
-| `venue` | Stock: `NYSE` / `NASDAQ` / `AMEX` / `OTC`; Crypto: `BINANCE` / `BYBIT` | Identity axis. |
+| `venue` | Stock: `NYSE` / `NASDAQ` / `AMEX` / `OTC`; Crypto: `BINANCE` / `BYBIT` | Identity axis. For stocks, look up the listing exchange from your quote vendor or the company's filings — don't guess. |
 | `asset_class` | `"spot"` | Only `spot` is supported at ship. |
 | `time_spec` | `{ holding_seconds, bar_interval? }` | See below. |
 | `data_cutoff` | RFC 3339 UTC, ≤ 30 s ahead of server time | Timestamp of your freshest input. Older than 48 h flips the record to `retroactive` (excluded from public accuracy stats). |
