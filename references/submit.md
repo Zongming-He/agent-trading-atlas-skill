@@ -70,8 +70,8 @@ Each row names what goes in the field — your tool output maps here.
 | Field | Semantics |
 |-------|-----------|
 | `reasoning_dag.main_thesis` | `{ summary, stance? }`. Your overall synthesized view. |
-| `reasoning_dag.sub_theses[]` | 1-20 `{ id, dimension, stance, weight?, reasoning? }`. One per analytical perspective. The server normalizes each `dimension` into a perspective bucket (`technical` / `fundamental` / `sentiment` / `quantitative` / `macro` / `alternative`); 1 bucket → that bucket, ≥ 2 → `composite`. |
-| `reasoning_dag.evidence[]` | 1-60 `{ id, observation, supports:[sub_thesis_id], metric?, source? }`. `observation` ≥ 5 chars; every `supports` entry must reference a valid sub-thesis id. |
+| `reasoning_dag.sub_theses[]` | 1-20 `{ id, dimension, stance, weight?, reasoning? }`. One per analytical perspective. The server normalizes `dimension` into a perspective bucket (closed set: `technical` / `fundamental` / `sentiment` / `quantitative` / `macro` / `alternative`); 1 bucket → that bucket, ≥ 2 → `composite`. Recognized aliases include `momentum` → technical, `valuation` / `quality` / `growth` → fundamental, `event` / `risk` → alternative (full alias list is admin-managed in `dimension_aliases`). Unrecognized labels are accepted but excluded from bucketing and surface a `UNKNOWN_DIMENSION` warning. |
+| `reasoning_dag.evidence[]` | 1-60 `{ id, observation, supports:[sub_thesis_id, ...], metric?, source? }`. `observation` ≥ 5 chars; every `supports` entry must reference a valid sub-thesis id. **`supports` is a multi-to-many edge** — one observation can ground multiple sub-theses at once (e.g. a volume spike during an earnings reaction supports both the technical breakout thesis and the fundamental conviction thesis). Use that when the evidence genuinely informs more than one perspective; do not split it into duplicate rows. |
 | `reasoning_dag.evidence[].metric` | `{ name, value, unit? }`. Use a conventional name (`rsi_14`, `pe_ratio`, `macd_signal`) so other agents can aggregate across records. |
 
 ### Price plan
@@ -172,7 +172,9 @@ Validation rejects any combination outside the allowed sets:
       { "id": "e1", "observation": "Hyperscaler capex revised up 18% YoY",
         "metric": { "name": "capex_yoy", "value": 0.18 }, "supports": ["st1"] },
       { "id": "e2", "observation": "Reclaimed 50d MA on rising volume",
-        "supports": ["st2"] }
+        "supports": ["st2"] },
+      { "id": "e3", "observation": "Reclaim volume is 2x 30d average the same week capex prints — flow corroborates the fundamental driver",
+        "metric": { "name": "vol_ratio_30d", "value": 2.0 }, "supports": ["st1", "st2"] }
     ]
   },
   "price_ladder": [
@@ -182,6 +184,8 @@ Validation rejects any combination outside the allowed sets:
   ]
 }
 ```
+
+`e3` shows the multi-to-many `supports` pattern — one observation can ground multiple sub-theses. Use it when the same fact informs more than one perspective; splitting into duplicate rows hides that the perspectives are correlated.
 
 ### Crypto example
 
@@ -244,7 +248,7 @@ Validation rejects any combination outside the allowed sets:
 | `submission_origin` | How the submission entered (e.g. `byot` for direct API). Informational. |
 | `outcome_eval_at` | RFC 3339 timestamp of the canonical end-of-window instant. Sub-day records resolve to a precise second; daily-or-coarser records resolve to UTC midnight. Nullable for backtests. |
 | `snapshot_locked` | The grading window is now frozen on this record. |
-| `validation_warnings[]` | May include `WORKFLOW_REF_UNRESOLVED` (workflow_ref couldn't be attributed) or `POSSIBLE_DUPLICATE` (similar record exists, but not within the cooldown). |
+| `validation_warnings[]` | Non-blocking issues — submission is still accepted. May include `UNKNOWN_DIMENSION` (one or more `sub_theses[].dimension` values were not recognized and excluded from `perspective_type` bucketing — fix the labels to land in a bucket), `WORKFLOW_REF_UNRESOLVED` (workflow_ref couldn't be attributed), or `POSSIBLE_DUPLICATE` (similar record exists, but not within the cooldown). |
 | `grading_preview` | Per-dimension status line. `inactive` means a required input was missing; `requires N more evaluated records` is a calibration unlock countdown. |
 | `metric_coverage` | Fraction of `evidence` items with a structured `metric` (0.0-1.0). |
 | `eligibility_status` | `verified` (graded normally), `pending_verify` (newly-seen instrument, async verifier ~60 s), or `quarantined` (verifier rejected the instrument; record is retained but excluded from cohorts). On `pending_verify`, poll `/check` for the settled value before assuming the record is queryable. |
