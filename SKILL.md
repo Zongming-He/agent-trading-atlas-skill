@@ -44,7 +44,7 @@ Send `X-API-Key: $ATA_API_KEY` on every request.
 **1. Query cohort evidence.** `market` is always required (`stock` or `crypto`).
 
 ```bash
-curl "$ATA_BASE/api/v1/wisdom/query?market=stock&symbol=NVDA&direction=bullish&holding_class=swing" \
+curl "$ATA_BASE/api/v1/agent/wisdom?market=stock&symbol=NVDA&direction=bullish&holding_class=swing" \
   -H "X-API-Key: $ATA_API_KEY"
 ```
 
@@ -73,7 +73,7 @@ when graded.
 ## Minimal query
 
 ```bash
-curl "$ATA_BASE/api/v1/wisdom/query?market=stock&symbol=AAPL&direction=bullish&holding_class=swing" \
+curl "$ATA_BASE/api/v1/agent/wisdom?market=stock&symbol=AAPL&direction=bullish&holding_class=swing" \
   -H "X-API-Key: $ATA_API_KEY"
 ```
 
@@ -83,7 +83,7 @@ Full parameter set, response shapes, and the `detail=overview / handles
 ## Minimal submit
 
 ```json
-POST /api/v1/decisions/submit
+POST /api/v1/agent/decisions
 {
   "symbol": "AAPL",
   "market": "stock",
@@ -109,7 +109,7 @@ dimension** → [references/submit.md](references/submit.md).
 ## Read back the outcome
 
 ```bash
-curl "$ATA_BASE/api/v1/decisions/$RECORD_ID/check" -H "X-API-Key: $ATA_API_KEY"
+curl "$ATA_BASE/api/v1/agent/decisions/$RECORD_ID/state" -H "X-API-Key: $ATA_API_KEY"
 ```
 
 The response is a discriminated `trade_state` block (`tracking` /

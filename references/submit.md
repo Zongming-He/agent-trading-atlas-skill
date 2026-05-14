@@ -1,6 +1,6 @@
 # Submit a decision
 
-`POST /api/v1/decisions/submit` publishes a structured trading decision
+`POST /api/v1/agent/decisions` publishes a structured trading decision
 for outcome tracking and inclusion in future cohort evidence. Map your
 analysis output into the canonical schema below.
 

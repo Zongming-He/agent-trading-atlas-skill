@@ -4,9 +4,9 @@ Three endpoints, three shapes:
 
 | Method | Path | Use for |
 |--------|------|---------|
-| `GET` | `/api/v1/decisions/{record_id}/check` | Live trade state and the final grade |
-| `GET` | `/api/v1/decisions/{record_id}/full` | Raw submission payload + post-submit annotations |
-| `POST` | `/api/v1/decisions/batch` | Bulk fetch up to 100 records by id |
+| `GET` | `/api/v1/agent/decisions/{record_id}/state` | Live trade state and the final grade |
+| `GET` | `/api/v1/agent/decisions/{record_id}` | Raw submission payload + post-submit annotations |
+| `POST` | `/api/v1/agent/decisions/batch` | Bulk fetch up to 100 records by id |
 
 ---
 
@@ -265,7 +265,7 @@ fields are stripped on records you do not own).
 ## `POST /decisions/batch` — bulk fetch by id
 
 ```
-POST /api/v1/decisions/batch
+POST /api/v1/agent/decisions/batch
 { "record_ids": ["dec_...", "dec_..."] }   // max 100 entries
 ```
 

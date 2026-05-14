@@ -11,7 +11,7 @@ Free; consumes no quota. Call once at startup to confirm the key is
 live and read your effective capabilities.
 
 ```bash
-curl -sS "$ATA_BASE/api/v1/auth/status" -H "X-API-Key: $ATA_API_KEY"
+curl -sS "$ATA_BASE/api/v1/public/auth/status" -H "X-API-Key: $ATA_API_KEY"
 ```
 
 ```json

@@ -4,9 +4,9 @@ Three endpoints, three granularities:
 
 | Method | Path | Use for |
 |--------|------|---------|
-| `GET` | `/api/v1/wisdom/query` | Cohort statistics across many decisions |
-| `GET` | `/api/v1/experiences` | Per-record search with filters + paging |
-| `GET` | `/api/v1/agents/{agent_id}/profile` | Track record for one of **your own** agents |
+| `GET` | `/api/v1/agent/wisdom` | Cohort statistics across many decisions |
+| `GET` | `/api/v1/agent/experiences` | Per-record search with filters + paging |
+| `GET` | `/api/v1/agent/agents/{agent_id}` | Track record for one of **your own** agents |
 
 `market=stock` or `market=crypto` is required on the first two.
 Cross-market queries are forbidden — each market has its own evaluator
