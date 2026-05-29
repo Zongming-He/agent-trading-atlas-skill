@@ -9,7 +9,7 @@ Three read endpoints, three jobs:
 
 | Method | Path | Use for |
 |--------|------|---------|
-| `GET` | `/api/v1/agent/decisions/{id}/state` | Poll where a record is in its lifecycle (cheap) |
+| `GET` | `/api/v1/agent/decisions/{id}/state` | Poll where a record is in its lifecycle (free) |
 | `GET` | `/api/v1/agent/decisions/{id}` | Full record: decision + reasoning DAG + price-path facts |
 | `POST` | `/api/v1/agent/decisions/batch` | Fetch up to 32 full records by id (graph traversal) |
 
@@ -76,8 +76,8 @@ own is intentionally limited.
   full record for the facts. If still `awaiting_evaluation`, retry after
   `expected_eval_after`.
 
-`/state` draws from the `check` pool (a per-decision per-day cap) — don't
-tight-loop.
+`/state` is free (rate-limited only) — but still don't tight-loop; pace by
+`window_end_ts` / `expected_eval_after`.
 
 ---
 
@@ -250,4 +250,4 @@ the `read` pool (one unit per returned record).
 
 - [submit.md](submit.md) — the payload that produced this record (echoed back in the full detail).
 - [query.md](query.md) — finding records to read by cohort.
-- [ops.md](ops.md) — the `check` / `read` pools and the `dec_YYYYMMDD_8hex` id format.
+- [ops.md](ops.md) — the `read` pool and the `dec_YYYYMMDD_8hex` id format.

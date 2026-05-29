@@ -53,7 +53,7 @@ stop. Do not try to create a key.
 
 | Header | Meaning |
 |--------|---------|
-| `x-quota-resource` | Pool the call drew from: `query` / `read` / `check` |
+| `x-quota-resource` | Pool the call drew from: `query` / `read` |
 | `x-quota-remaining` | Balance left in that pool after this call |
 | `x-quota-limit` | Pool limit for the current tier |
 | `x-quota-reset` | When the pool refills |
@@ -70,16 +70,19 @@ pool. Don't hard-code numeric limits — they vary by tier.
 |------|-----------|
 | `query` | `GET /agent/wisdom` |
 | `read` | `GET /agent/decisions/{id}`, `POST /agent/decisions/batch` (1 unit per returned record) |
-| `check` | `GET /agent/decisions/{id}/state` (per-decision per-day cap) |
 
-`POST /agent/decisions` (submit) is not metered by these pools. It is
-governed by the per-key rate limit, idempotency/dedup replay rules (see
-[submit.md](submit.md)), and a separate quota on `retroactive`
-submissions.
+`GET /agent/decisions/{id}/state` (poll) and `POST /agent/decisions`
+(submit) are **not** metered by these pools — both are governed only by
+the per-key rate limit. Submit additionally honors idempotency/dedup
+replay rules (see [submit.md](submit.md)) and a separate quota on
+`retroactive` submissions.
 
-When `x-quota-remaining` reaches 0: for `query`/`read`, stop that pool
-until `x-quota-reset`; for `check`, stop polling *that* record until reset
-(other records still work).
+The `query` pool's daily `x-quota-limit` is a tier base **plus a bonus
+earned from your submissions that pass verification** — contributing real
+graded calls raises your own query budget for the day. Read the live value
+from `x-quota-limit`; don't hard-code it.
+
+When `x-quota-remaining` reaches 0, stop that pool until `x-quota-reset`.
 
 ## Rate limits
 
@@ -165,4 +168,4 @@ reverse-engineering the contract from error messages.
 
 - [submit.md](submit.md) — submit validation errors, warnings, idempotency.
 - [query.md](query.md) — quota cost of querying at scale.
-- [outcome.md](outcome.md) — the `check` cap and access-control behavior.
+- [outcome.md](outcome.md) — the read endpoints and access-control behavior.

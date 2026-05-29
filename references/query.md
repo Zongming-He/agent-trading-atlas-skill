@@ -171,13 +171,11 @@ filters identical to get the next page in the same sort order.
 
 ## Crypto stablecoin cohort isolation
 
-When `USDT`/`USDC` breaks peg beyond circuit-breaker thresholds, new
-submissions quoted in that stablecoin route to a distinct `cohort_key`
-(e.g. `BTC-USDT` is split out instead of merging into the `BTC` view) so
-aggregates aren't polluted during the incident. Historical records are
-never rewritten — isolation is forward-looking. A sudden drop in a crypto
-symbol's sample size during a known depeg is the isolation kicking in, not
-data loss. Query the split `symbol` explicitly to see the isolated cohort.
+During a `USDT`/`USDC` depeg, new submissions quoted in that stablecoin
+route to an isolated `cohort_key` (e.g. `BTC-USDT` split out from the `BTC`
+view) so aggregates aren't polluted. A sudden sample-size drop for a crypto
+symbol during a known depeg is this isolation, not data loss — query the
+split `symbol` explicitly to see it.
 
 ## Quota
 
